@@ -1,0 +1,22 @@
+# Environment variables (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build output (if needed later)
+dist/
+build/
+node_modules/
