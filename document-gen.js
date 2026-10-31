@@ -132,7 +132,7 @@ function getOfferTemplate() {
 <html lang="ru">
 <head><meta charset="UTF-8"><style>
   body { font-family: Arial, sans-serif; font-size: 11pt; color: #333; padding: 30px; }
-  .header { background: #2f765d; color: white; padding: 25px; margin: -30px -30px 24px; border-radius: 0; }
+  .header { background: #2f765d; color: white; padding: 25px; margin: -30px; border-radius: 0; }
   .header h1 { margin: 0; font-size: 18pt; }
   .header p { margin: 5px 0 0; opacity: 0.9; }
   .title { font-size: 14pt; font-weight: bold; margin: 25px 0 15px; color: #2f765d; }
@@ -206,7 +206,7 @@ function getActTemplate() {
   <p><b>Подрядчик:</b> {{company}}</p>
   <p><b>Проект:</b> {{object_name}}</p>
 
-  <p>Работы по договору выполнены, изделия поставлены и смонтированы в объёме, указанном ниже.</p>
+  <p>Работы выполнены в полном объёме и соответствуют требованиям договора.</p>
 
   <table>
     <tr>
@@ -223,7 +223,7 @@ function getActTemplate() {
     </tr>
   </table>
 
-  <p>Всего выполнено работ и поставлено изделий на сумму: <b>{{money}} ₽</b> ({{money_words}}), {{vat}}.</p>
+  <p>Всего оказано услуг на сумму: <b>{{money}} ₽</b> ({{money_words}}), {{vat}}.</p>
   <p>Замечаний по качеству и объёму СТОРОНЫ не имеют.</p>
 
   <div class="signature">
@@ -239,7 +239,7 @@ function getPassportTemplate() {
 <html lang="ru">
 <head><meta charset="UTF-8"><style>
   body { font-family: Arial, sans-serif; font-size: 11pt; color: #333; padding: 30px; }
-  .header { background: #2f765d; color: white; padding: 20px; margin: -30px -30px 24px; }
+  .header { background: #2f765d; color: white; padding: 20px; margin: -30px; }
   .header h1 { margin: 0; font-size: 16pt; }
   .meta { display: flex; gap: 20px; margin: 15px 0; font-size: 10pt; }
   table { width: 100%; border-collapse: collapse; margin: 15px 0; }
@@ -299,7 +299,7 @@ function fillTemplate(template, project) {
     director: c.director || blank,
     contractor: project.contractor || 'Не указан',
     object_name: project.name || 'Объект без названия',
-    items: (project.items || '').trim() || 'Не указано',
+    items: project.items || 'Не указано',
     money: formatMoney(total),
     advance: formatMoney(paid),
     remaining: formatMoney(Math.max(0, total - paid)),
@@ -329,10 +329,10 @@ function fillTemplate(template, project) {
 
 function generateItemsTable(project, cols) {
   // Строки таблицы из «Предмета договора»: «Лавочки 80 · Урны 80 шт»
-  const parts = String(project.items || '').trim().split(/\s*[·•;\n]\s*|,\s+(?=\D)/).map(x => x.trim()).filter(Boolean);
+  const parts = String(project.items || '').split(/[·•,;\n]/).map(x => x.trim()).filter(Boolean);
   if (!parts.length) return '';
   return parts.map((part, i) => {
-    const m = part.match(/^(.*?)[\s—-]*(\d+(?:[.,]\d+)?)\s*(шт|компл|кв\.?\s?м|м2|м²|п\.?\s?м|м)?\.?$/i);
+    const m = part.match(/^(.*?)[\s—-]*(\d+)\s*(шт|м|компл|кв\.?\s?м|м2|п\.?\s?м)?\.?$/i);
     const name = m && m[1] ? m[1] : part, qty = m && m[1] ? m[2] : '', unit = (m && m[3]) || 'шт';
     const priceCols = cols === 6 ? '<td></td><td></td>' : '<td></td>';
     return `<tr><td>${i + 1}</td><td>${esc(name)}</td><td>${esc(qty)}</td><td>${esc(unit)}</td>${priceCols}</tr>`;
@@ -347,7 +347,7 @@ function previewDocument(projectId, template) {
   if (!project) return;
 
   let html = fillTemplate(template, project);
-  html = html.replace('<body>', '<body><div class="noprint" style="background:#fff;padding:8px 0;margin:-20px 0 34px;border-bottom:1px solid #ddd;position:relative;z-index:5"><button onclick="print()" style="font-size:14px;padding:8px 16px">🖨 Печать / сохранить в PDF</button></div>').replace('</style>', '@media print{.noprint{display:none}}</style>');
+  html = html.replace('<body>', '<body><div class="noprint" style="position:sticky;top:0;background:#fff;padding:8px 0;margin-bottom:10px;border-bottom:1px solid #ddd"><button onclick="print()" style="font-size:14px;padding:8px 16px">🖨 Печать / сохранить в PDF</button></div>').replace('</style>', '@media print{.noprint{display:none}}</style>');
   let win = window.open('', '_blank', 'width=900,height=700');
   if (!win) return alert('Браузер заблокировал новое окно. Разрешите всплывающие окна для этого сайта.');
   win.document.write(html);
@@ -364,7 +364,7 @@ function openDocGenerator(projectId) {
 
   loadTemplates().then(() => {
     let html = `
-      <button class="close" onclick="closeModal()" aria-label="Закрыть">×</button>
+      <button class="close" onclick="closeModal()">×</button>
       <h2>📄 Генерация документов</h2>
       <p class="tapHint">Выберите документ для «${esc(project.name)}»</p>
       ${(typeof companyInfo==='object'&&companyInfo.name)?'':'<div class="woodNotice">Реквизиты фирмы не заполнены — откройте «Команда» → «Реквизиты фирмы».</div>'}
@@ -374,10 +374,6 @@ function openDocGenerator(projectId) {
 
     templates.forEach(t => {
       let info = t.typeInfo || DOC_TYPES[t.type] || { label: t.name, icon: '📄', color: '#888' };
-      if (t.type === 'act' && project.status !== 'Выполнено') {
-        html += `<div style="border:1px dashed #c9d6cf;border-radius:12px;padding:14px;text-align:center;color:#56655f;"><div style="font-size:24px;margin-bottom:6px;">${info.icon}</div><div style="font-weight:700;font-size:12px;">${info.label}</div><div style="font-size:11px;margin-top:4px;">Доступен, когда объект выполнен</div></div>`;
-        return;
-      }
       html += `
         <div style="border:1px solid #d7e4dc;border-radius:12px;padding:14px;cursor:pointer;text-align:center;transition:all .15s;"
              onmouseover="this.style.borderColor='${info.color}';this.style.boxShadow='0 2px 8px #0002'"
@@ -395,13 +391,12 @@ function openDocGenerator(projectId) {
 
 
       <div class="actions" style="margin-top:15px;">
-        <button class="btn secondary" onclick="detail('${projectId}')">← К объекту</button>
+        <button class="btn secondary" onclick="closeModal()">Закрыть</button>
       </div>
     `;
 
     $('sheet').innerHTML = html;
-    currentDetail = null;
-    openModal();
+    $('modal').classList.add('on');
   });
 }
 
@@ -425,7 +420,7 @@ function moneyToWords(n) {
   const teens = ['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
   const tens = ['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
   const hundreds = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
-  const units = [[['рубль','рубля','рублей'],0],[['тысяча','тысячи','тысяч'],1],[['миллион','миллиона','миллионов'],0],[['миллиард','миллиарда','миллиардов'],0],[['триллион','триллиона','триллионов'],0]];
+  const units = [[['рубль','рубля','рублей'],0],[['тысяча','тысячи','тысяч'],1],[['миллион','миллиона','миллионов'],0],[['миллиард','миллиарда','миллиардов'],0]];
   const plural = (x, f) => { x %= 100; if (x > 10 && x < 20) return f[2]; x %= 10; return x === 1 ? f[0] : (x >= 2 && x <= 4 ? f[1] : f[2]); };
   if (n === 0) return 'ноль рублей 00 копеек';
   const out = []; let i = 0, rest = n;

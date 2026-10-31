@@ -14,7 +14,7 @@
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2">
   <link rel="manifest" href="manifest.webmanifest?v=18">
-  <link rel="stylesheet" href="styles.css?v=41">
+  <link rel="stylesheet" href="styles.css?v=40">
 </head>
 <body>
 
@@ -41,9 +41,9 @@
     <div class="teamtop">
       <div id="teamUser" class="teamuser">Подключение…</div>
       <div style="display:flex;gap:5px">
+        <button id="teamBtn" class="chip" style="display:none" onclick="openTeam()">Команда</button>
         <span id="syncDot" class="syncdot">SERVER</span>
-        <button id="teamBtn" class="chip" style="display:none" onclick="openTeam()" aria-label="Ещё: команда, реквизиты, выход">Ещё ⋯</button>
-        <button id="signOutBtn" class="chip" hidden>Выйти</button>
+        <button id="signOutBtn" class="chip" style="display:none">Выйти</button>
       </div>
     </div>
 
@@ -59,15 +59,16 @@
     <section id="objectsView" class="view on">
       <div class="top">
         <div class="head">
-          <h1>Объекты</h1>
-          <button class="btn" id="addObjBtn" data-owner onclick="openProject()">+ Объект</button>
+          <h1>Мои объекты</h1>
+          <button class="btn" onclick="openProject()">+ Добавить</button>
         </div>
+        <div class="searchBar"><input id="objectSearch" type="search" placeholder="🔍 Поиск по названию, заказчику…" oninput="renderObjects()"></div>
         <div id="summary" class="summary"></div>
         <div class="filters">
-          <button class="chip on" data-b="active">В работе</button>
+          <button class="chip on" data-b="active">Активные</button>
           <button class="chip" data-b="debt">Ждём оплату</button>
-          <button class="chip" data-b="contract">Договор</button>
-          <button class="chip" data-b="archive">Закрыто</button>
+          <button class="chip" data-b="docs">Нужны документы</button>
+          <button class="chip" data-b="archive">Архив</button>
         </div>
       </div>
       <div id="grid" class="grid"></div>
@@ -89,7 +90,11 @@
     <section id="woodView" class="view">
       <div class="top">
         <div class="head">
-          <h1>Цех · дерево</h1>
+          <h1>Дерево</h1>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn" onclick="exportWoodToPDF()">📄 PDF</button>
+            <button class="btn" onclick="addWoodPosition()">+ Дерево</button>
+          </div>
         </div>
         <div class="summary">Объекты, для которых нужно дерево</div>
         <div class="woodFilters">
@@ -101,7 +106,8 @@
 
     <section id="analyticsView" class="view">
       <div class="top">
-        <h1>Деньги</h1>
+        <div class="eyebrow">ФИНАНСОВЫЙ ПУЛЬС</div>
+        <h1>Аналитика</h1>
         <div class="summary">Деньги и объекты — без лишнего шума</div>
       </div>
       <div id="analyticsBody"></div>
@@ -112,8 +118,8 @@
     <button class="tab" data-v="today"><i>●</i>Сегодня</button>
     <button class="tab on" data-v="objects"><i>▦</i>Объекты</button>
     <button class="tab" data-v="tasks"><i>✓</i>Задачи</button>
-    <button class="tab" data-v="wood"><i>▤</i>Цех</button>
-    <button class="tab" data-v="analytics" data-owner><i>₽</i>Деньги</button>
+    <button class="tab" data-v="wood"><i>▤</i>Дерево</button>
+    <button class="tab" data-v="analytics"><i>⌁</i>Аналитика</button>
   </nav>
 
   <div id="modal" class="modal">
@@ -121,9 +127,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=41"></script>
-  <script src="wood-wheels.js?v=41"></script>
-  <script src="rounded-selects.js?v=41"></script>
-  <script src="document-gen.js?v=41"></script>
+  <script src="app.js?v=40"></script>
+  <script src="wood-wheels.js?v=40"></script>
+  <script src="rounded-selects.js?v=40"></script>
+  <script src="document-gen.js?v=40"></script>
 </body>
 </html>
