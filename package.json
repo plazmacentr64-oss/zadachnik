@@ -1,0 +1,9 @@
+{
+  "name": "zadachnik-srm",
+  "version": "1.0.42",
+  "private": true,
+  "description": "Задачник SRM: статика + посредник к Supabase",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "build": "echo no build" },
+  "engines": { "node": ">=20" }
+}
