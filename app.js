@@ -1,8 +1,8 @@
 'use strict';
 const $=id=>document.getElementById(id), LS_OBJ='crm01',LS_TASK='crm09tasks';
 const SUPABASE_DIRECT='https://qlyqgltoumxixteerqak.supabase.co';
-// На своём сайте ходим к базе через посредника /sb (работает без VPN); с локального файла — напрямую
-const SUPABASE_URL=/^https?:$/.test(location.protocol)&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&window.__SB_PROXY!==false?location.origin+'/sb':SUPABASE_DIRECT;
+// По умолчанию — напрямую. Посредник /sb (server.js) включается, только если сайт запущен как Node-сервер: <meta name=sb-proxy content=on>
+const SUPABASE_URL=document.querySelector('meta[name=sb-proxy][content=on]')&&/^https?:$/.test(location.protocol)?location.origin+'/sb':SUPABASE_DIRECT;
 const SUPABASE_KEY='sb_publishable_qF4gxUFPHxpMr_lA5VOHCQ_BDExMuBp';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'sb-qlyqgltoumxixteerqak-auth-token'}});
 let wood=[],woodAvailable=false,woodFilter="";

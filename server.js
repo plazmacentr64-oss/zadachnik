@@ -35,6 +35,7 @@ function serveStatic(req, res, p) {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     const ext = path.extname(name);
     res.writeHead(200, { 'content-type': TYPES[ext] || 'application/octet-stream', 'cache-control': name === 'index.html' || name === 'sw.js' ? 'no-cache' : 'public, max-age=3600', 'x-content-type-options': 'nosniff' });
+    if (name === 'index.html') buf = Buffer.from(String(buf).replace('<head>', '<head><meta name="sb-proxy" content="on">'));
     res.end(req.method === 'HEAD' ? undefined : buf);
   });
 }
