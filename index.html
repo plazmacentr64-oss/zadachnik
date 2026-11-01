@@ -14,7 +14,7 @@
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2">
   <link rel="manifest" href="manifest.webmanifest?v=18">
-  <link rel="stylesheet" href="styles.css?v=44">
+  <link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body>
 
@@ -88,21 +88,24 @@
 
     <section id="woodView" class="view">
       <div class="top">
-        <div class="head">
-          <h1>Цех · дерево</h1>
-        </div>
-        <div class="summary">Объекты, для которых нужно дерево</div>
-        <div class="woodFilters">
-          <select id="woodProjectFilter" onchange="woodFilter=this.value;renderWood()"></select>
-        </div>
+        <div class="head"><h1>Цех</h1></div>
+        <div class="summary">Детали по объектам: дерево, металл, прочее</div>
       </div>
       <div id="woodBody"></div>
+    </section>
+
+    <section id="supplyView" class="view">
+      <div class="top">
+        <div class="head"><h1>Снабжение</h1></div>
+        <div class="summary">Что заказать по всем объектам в работе</div>
+      </div>
+      <div id="supplyBody"></div>
     </section>
 
     <section id="analyticsView" class="view">
       <div class="top">
         <h1>Деньги</h1>
-        <div class="summary">Деньги и объекты — без лишнего шума</div>
+        <div id="moneySeg" class="segBar"></div>
       </div>
       <div id="analyticsBody"></div>
     </section>
@@ -112,7 +115,8 @@
     <button class="tab" data-v="today"><i>●</i>Сегодня</button>
     <button class="tab on" data-v="objects"><i>▦</i>Объекты</button>
     <button class="tab" data-v="tasks"><i>✓</i>Задачи</button>
-    <button class="tab" data-v="wood"><i>▤</i>Цех</button>
+    <button class="tab" data-v="wood"><i>⚒</i>Цех</button>
+    <button class="tab" data-v="supply"><i>⛟</i>Снабжение</button>
     <button class="tab" data-v="analytics" data-owner><i>₽</i>Деньги</button>
   </nav>
 
@@ -121,9 +125,11 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=44"></script>
-  <script src="wood-wheels.js?v=44"></script>
-  <script src="rounded-selects.js?v=44"></script>
-  <script src="document-gen.js?v=44"></script>
+  <script src="app.js?v=45"></script>
+  <script src="production.js?v=45"></script>
+  <script src="salary.js?v=45"></script>
+  <script src="wood-wheels.js?v=45"></script>
+  <script src="rounded-selects.js?v=45"></script>
+  <script src="document-gen.js?v=45"></script>
 </body>
 </html>
