@@ -390,3 +390,10 @@ button.debtrow{display:flex}
 .stickyActions .btn{flex:1;padding:10px 8px}
 .scopeSwitch{display:flex;gap:6px;margin-bottom:10px}
 .inlineEdit[disabled]{background:transparent;border-color:transparent;color:var(--text);opacity:1;-webkit-text-fill-color:var(--text)}
+
+/* ===== v44: правки UX ===== */
+.hero.warn span{color:#7a2318;opacity:.85;font-weight:600}
+.stickyActions{background:#fff;box-shadow:0 -6px 16px rgba(23,33,43,.08)}
+#sheet{scroll-padding-bottom:90px}
+.toast span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.taskDel{font-size:12px;opacity:.7;background:none!important;border:none!important;color:var(--text-secondary)!important;text-decoration:underline;padding:6px 0!important}

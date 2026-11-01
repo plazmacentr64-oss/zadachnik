@@ -100,8 +100,7 @@ function getContractTemplate() {
   <div class="section">
     <div class="section-title">2. СТОИМОСТЬ</div>
     <p>2.1. Стоимость работ: <b>{{money}}</b> ₽ ({{money_words}}), {{vat}}.</p>
-    <p>2.2. Аванс: {{advance}} ₽.</p>
-    <p>2.3. Остаток: {{remaining}} ₽.</p>
+    <p>2.2. Порядок оплаты: ________________________________________________ (аванс, сроки и условия окончательного расчёта).</p>
   </div>
 
   <div class="section">
@@ -176,7 +175,7 @@ function getOfferTemplate() {
   <p>• Срок изготовления: {{lead_time}}</p>
   <p>• Доставка: {{delivery_time}}</p>
   <p>• Гарантия: {{warranty}}</p>
-  <p>• Аванс: {{advance_pct}}%</p>
+  <p>• Порядок оплаты: по договорённости сторон</p>
 
   <div class="footer">
     <p>{{company}} | {{company_contact}}</p>
@@ -224,7 +223,8 @@ function getActTemplate() {
   </table>
 
   <p>Всего выполнено работ и поставлено изделий на сумму: <b>{{money}} ₽</b> ({{money_words}}), {{vat}}.</p>
-  <p>Замечаний по качеству и объёму СТОРОНЫ не имеют.</p>
+  <p>Замечания Заказчика по качеству и объёму: ________________________________________________</p>
+  <p>________________________________________________________________________________________</p>
 
   <div class="signature">
     <div class="sig-block"><b>Заказчик</b><br>Принято<br><br>__________</div>
@@ -282,13 +282,18 @@ function fillTemplate(template, project) {
   const paid = typeof received === 'function' ? received(project) : 0;
   const total = +project.money || 0;
   const now = new Date();
-  const docNo = String(now.getFullYear()).slice(2) + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(project.id || '').replace(/-/g, '').slice(0, 4).toUpperCase();
+  // Номер документа постоянный для объекта: год-месяц начала + код объекта
+  const base = (project.startDate || '').replace(/-/g, '').slice(2, 6) || (String(now.getFullYear()).slice(2) + String(now.getMonth() + 1).padStart(2, '0'));
+  const docNo = base + '-' + String(project.id || '').replace(/-/g, '').slice(0, 4).toUpperCase();
+  // Дата: договор — дата начала работ; акт — пустая, заполняется при приёмке; КП и паспорт — сегодня
+  const docDate = template.type === 'contract' ? (project.startDate || '') : template.type === 'act' ? '' : localISO();
+  const leadDays = project.startDate && project.date ? Math.round((new Date(project.date + 'T12:00:00') - new Date(project.startDate + 'T12:00:00')) / 86400000) : 0;
   const tax = c.tax || 'УСН (без НДС)';
   const rate = (tax.match(/(\d+)%/) || [])[1];
   const vat = rate ? `в т.ч. НДС ${rate}% — ${formatMoney(total * rate / (100 + +rate))} ₽` : 'НДС не облагается (УСН)';
   const raw = {
     version: docNo,
-    date: formatRuDate(localISO()),
+    date: formatRuDate(docDate),
     city: c.city || blank,
     company: c.name || 'Наименование подрядчика не заполнено',
     company_inn: c.inn || blank, company_kpp: c.kpp || blank, company_ogrn: c.ogrn || blank,
@@ -311,7 +316,7 @@ function fillTemplate(template, project) {
     money_words: moneyToWords(total),
     advance_pct: total ? Math.round(paid / total * 100) : 0,
     vat,
-    lead_time: '14 рабочих дней',
+    lead_time: leadDays > 0 ? leadDays + ' ' + ['календарный день','календарных дня','календарных дней'][(leadDays % 100 > 10 && leadDays % 100 < 20) ? 2 : [2,0,1,1,1,2,2,2,2,2][leadDays % 10]] + ' (до ' + formatRuDate(project.date) + ')' : '________',
     delivery_time: '3 рабочих дня',
     warranty: '24 месяца',
     serial: 'ПАС-' + docNo,
@@ -409,7 +414,8 @@ function openDocGenerator(projectId) {
 // УТИЛИТЫ
 // ============================================
 function formatMoney(n) {
-  return new Intl.NumberFormat('ru-RU').format(Math.round(n || 0));
+  const v = Math.round((+n || 0) * 100) / 100;
+  return new Intl.NumberFormat('ru-RU', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(v);
 }
 
 function formatRuDate(dateStr) {
@@ -420,14 +426,16 @@ function formatRuDate(dateStr) {
 }
 
 function moneyToWords(n) {
-  n = Math.round(+n || 0);
+  const kop = String(Math.round(((+n || 0) % 1) * 100)).padStart(2, '0');
+  n = Math.floor(+n || 0);
   const ones = [['','один','два','три','четыре','пять','шесть','семь','восемь','девять'],['','одна','две','три','четыре','пять','шесть','семь','восемь','девять']];
   const teens = ['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
   const tens = ['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
   const hundreds = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
   const units = [[['рубль','рубля','рублей'],0],[['тысяча','тысячи','тысяч'],1],[['миллион','миллиона','миллионов'],0],[['миллиард','миллиарда','миллиардов'],0],[['триллион','триллиона','триллионов'],0]];
   const plural = (x, f) => { x %= 100; if (x > 10 && x < 20) return f[2]; x %= 10; return x === 1 ? f[0] : (x >= 2 && x <= 4 ? f[1] : f[2]); };
-  if (n === 0) return 'ноль рублей 00 копеек';
+  const kwOf = k => (k % 100 > 10 && k % 100 < 20) ? 'копеек' : ['копеек','копейка','копейки','копейки','копейки','копеек','копеек','копеек','копеек','копеек'][k % 10];
+  if (n === 0) return 'Ноль рублей ' + kop + ' ' + kwOf(+kop);
   const out = []; let i = 0, rest = n;
   while (rest > 0 && i < units.length) {
     const tri = rest % 1000, [forms, fem] = units[i];
@@ -440,7 +448,7 @@ function moneyToWords(n) {
     rest = Math.floor(rest / 1000); i++;
   }
   const t = out.join(' ').replace(/\s+/g, ' ').trim();
-  return t.charAt(0).toUpperCase() + t.slice(1) + ' 00 копеек';
+  return t.charAt(0).toUpperCase() + t.slice(1) + ' ' + kop + ' ' + kwOf(+kop);
 }
 
 // esc() берётся из app.js
