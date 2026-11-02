@@ -1,6 +1,6 @@
 // Офлайн-кэш: только статические файлы самого сайта. Данные Supabase никогда не кэшируются.
-const CACHE='zadachnik-v53';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./production.js','./salary.js','./price.js','./economics.js','./woodspecies.js','./price-import.js','./wood-wheels.js','./rounded-selects.js','./v51.js','./v52.js','./v53.js','./document-gen.js','./manifest.webmanifest','./favicon.ico','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./favicon-32.png','./favicon-48.png'];
+const CACHE='zadachnik-v54';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./production.js','./salary.js','./price.js','./economics.js','./woodspecies.js','./price-import.js','./wood-wheels.js','./rounded-selects.js','./v51.js','./v52.js','./v53.js','./v54.js','./icons.js','./document-gen.js','./manifest.webmanifest','./favicon.ico','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./favicon-32.png','./favicon-48.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener('message',e=>{if(e.data==='clear')caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)))});

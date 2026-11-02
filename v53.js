@@ -13,8 +13,8 @@ function autoToWork(o){if(!o||o.status!=='Подписание договора'
 /* значки материалов */
 const PAINT_RX=/краск|эмал|грунт|порош|лак|раствор|ral/i;
 const kKey=x=>x.kind==='wood'?'wood':x.kind==='metal'?'metal':PAINT_RX.test(x.name||'')?'paint':'other';
-const K_ICON={metal:'⚙',wood:'🪵',other:'🔩',paint:'🎨'};
-const kIcon=k=>`<i class="kI ${k}" aria-hidden=true>${K_ICON[k]||'🔩'}</i>`;
+const K_ICON={metal:'gear-six',wood:'tree',other:'nut',paint:'paint-roller'};
+const kIcon=k=>`<i class="kI ${k}" aria-hidden=true>${ic(K_ICON[k]||'nut',16)}</i>`;
 
 /* внутрицеховые: работы и расходники — зачеркнуть, завтра в «Выполнено» */
 function inShopHtml(){
@@ -38,6 +38,8 @@ async function shopPartDone(id,on){
 
 /* накладные расходы цеха: статьи в месяц и оборот в год → % от договора */
 const OH_DEF=[{id:'rent',icon:'🏠',name:'Аренда цеха',amount:160000},{id:'power',icon:'⚡',name:'Электроэнергия',amount:150000}];
+const OH_IC={'🏠':'house-line','⚡':'lightning','🔥':'flame','💧':'drop','📱':'wifi-high','🚚':'truck','🛡':'shield-check','🧾':'receipt'};
+const ohIcon=x=>`<i class="kI other" style="background:#e6f1ec;color:var(--primary)">${ic(OH_IC[x.icon]||(PH[x.icon]?x.icon:null)||(/аренд/i.test(x.name)?'house-line':/свет|электр/i.test(x.name)?'lightning':/газ|отоп/i.test(x.name)?'flame':/связ|интернет/i.test(x.name)?'wifi-high':'receipt'),16)}</i>`;
 const ohItems=()=>Array.isArray(wsSettings?.overheads)?wsSettings.overheads:OH_DEF;
 const ohTurnover=()=>+wsSettings?.turnover_year>0?+wsSettings.turnover_year:60000000;
 const ohMonth=()=>ohItems().reduce((s,i)=>s+(+i.amount||0),0);
@@ -49,7 +51,7 @@ renderAnalytics=function(){if(moneySeg==='overhead'&&isOwner())return renderOver
 function renderOverhead(){
  const it=ohItems(),m=ohMonth(),t=ohTurnover(),r=ohRate()||0,act=data.filter(o=>o.status==='В работе').sort((a,b)=>(+b.money||0)-(+a.money||0));
  $('analyticsBody').innerHTML=`<div class=small style="margin:4px 2px 8px">Постоянные расходы цеха в месяц. Делятся между объектами пропорционально сумме договора — через средний оборот.</div>
- ${it.map((x,i)=>`<button class=ohRow onclick="ohEdit(${i})"><span>${esc(x.icon||'•')} ${esc(x.name)}</span><b>${rub(x.amount)}</b></button>`).join('')}
+ ${it.map((x,i)=>`<button class=ohRow onclick="ohEdit(${i})"><span class=ohL>${ohIcon(x)}${esc(x.name)}</span><b>${rub(x.amount)}</b></button>`).join('')}
  <button class="btn secondary wide" style="margin-top:6px" onclick="ohAdd()">+ Статья</button>
  <div class=info style="margin-top:10px"><div class="kvRow mineBig" style="border:0;margin:0;padding:0"><span>Итого в месяц</span><b>${rub(m)}</b></div><div class=kvRow><span>В год</span><b>${rub(m*12)}</b></div>
  <button class=ohRow style="margin:8px 0 0" onclick="ohTurn()"><span>Средний оборот в год</span><b>${rubShort(t)}</b></button>
@@ -59,14 +61,14 @@ function renderOverhead(){
 }
 async function ohSave(list,turn){const patch={overheads:list};if(turn!=null)patch.turnover_year=turn;try{await saveSettings(patch);renderCurrent()}catch(e){failSave(e)}}
 function ohEdit(i){const list=ohItems().map(x=>({...x})),x=list[i];
- $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>${esc(x.icon||'')} ${esc(x.name)}</h2><label class=field>Название<input id=ohN value="${esc(x.name)}"></label><label class=field>Сумма в месяц, ₽<input id=ohA inputmode=decimal value="${moneyText(x.amount)}"></label><div class=actions><button class="btn secondary" onclick=closeModal()>Отмена</button><button class=btn id=ohS>Сохранить</button></div><button class=dangerLink id=ohD>Удалить статью</button>`;
+ $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>${esc(x.name)}</h2><label class=field>Название<input id=ohN value="${esc(x.name)}"></label><label class=field>Сумма в месяц, ₽<input id=ohA inputmode=decimal value="${moneyText(x.amount)}"></label><div class=actions><button class="btn secondary" onclick=closeModal()>Отмена</button><button class=btn id=ohS>Сохранить</button></div><button class=dangerLink id=ohD>Удалить статью</button>`;
  openModal();$('ohA').oninput=e=>fmtMoneyInput(e.target);
  $('ohS').onclick=async()=>{x.name=$('ohN').value.trim()||x.name;x.amount=moneyVal($('ohA').value);closeModal();await ohSave(list)};
  $('ohD').onclick=async()=>{if(!confirm('Удалить статью «'+x.name+'»?'))return;list.splice(i,1);closeModal();await ohSave(list)};
 }
-function ohAdd(){const ic=['🏠','⚡','🔥','💧','📱','🚚','🛡','🧾'];
- $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Новая статья</h2><div class=chipRow id=ohI>${ic.map((c,i)=>`<button type=button class="chip ${i===6?'on':''}" data-v="${c}">${c}</button>`).join('')}</div><label class=field>Название<input id=ohN placeholder="Например: газ, вода, охрана, бухгалтер"></label><label class=field>Сумма в месяц, ₽<input id=ohA inputmode=decimal></label><div class=actions><button class="btn secondary" onclick=closeModal()>Отмена</button><button class=btn id=ohS>Добавить</button></div>`;
- openModal();let icon='🛡';$('ohA').oninput=e=>fmtMoneyInput(e.target);$('ohI').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;icon=b.dataset.v;[...$('ohI').children].forEach(x=>x.classList.toggle('on',x===b))};
+function ohAdd(){const icl=['house-line','lightning','flame','drop','wifi-high','truck','shield-check','receipt'];
+ $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Новая статья</h2><div class=chipRow id=ohI>${icl.map((c,i)=>`<button type=button class="chip ${i===6?'on':''}" data-v="${c}">${ic(c,18)}</button>`).join('')}</div><label class=field>Название<input id=ohN placeholder="Например: газ, вода, охрана, бухгалтер"></label><label class=field>Сумма в месяц, ₽<input id=ohA inputmode=decimal></label><div class=actions><button class="btn secondary" onclick=closeModal()>Отмена</button><button class=btn id=ohS>Добавить</button></div>`;
+ openModal();let icon='shield-check';$('ohA').oninput=e=>fmtMoneyInput(e.target);$('ohI').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;icon=b.dataset.v;[...$('ohI').children].forEach(x=>x.classList.toggle('on',x===b))};
  $('ohS').onclick=async()=>{const n=$('ohN').value.trim();if(!n)return alert('Название');const list=ohItems().map(x=>({...x}));list.push({id:uuid(),icon,name:n,amount:moneyVal($('ohA').value)});closeModal();await ohSave(list)};
 }
 function ohTurn(){askNum('Средний оборот в год','по нему считается доля накладных в каждом договоре',ohTurnover(),async v=>{if(!(v>0))throw new Error('Укажите оборот');await saveSettings({turnover_year:v})},'Оборот в год, ₽')}

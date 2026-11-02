@@ -2,7 +2,7 @@
 // v45: справочник изделий, спецификация объекта, план работ, цех (дерево + металл), снабжение
 let catItems=[],catOps=[],catMats=[],specLines=[],projOps=[],parts=[],prodError='';
 let shopKind='wood',shopFilter='',supplyTab='order';
-const KIND_NAME={metal:'Металл',wood:'Дерево',other:'Метизы и прочее'},KIND_ICON={metal:'⚙',wood:'🪵',other:'🔩'};
+const KIND_NAME={metal:'Металл',wood:'Дерево',other:'Метизы и прочее'},KIND_ICON={metal:'',wood:'',other:''};
 const PART_STATUS=['order','ordered','stock','ready'],PART_LABEL={order:'К заказу',ordered:'Заказано',stock:'Есть',ready:'Готово ✓'};
 const MAT_NAMES=['Труба проф.','Труба круглая','Уголок','Полоса','Лист','Швеллер','Арматура','Пруток','Лиственница','Сосна','Доска','Брус','Брусок','Болт','Гайка','Саморез','Анкер','Краска порошковая','Грунт','Эмаль'];
 const UNITS=['шт','м','кг','м²','л','компл'];
@@ -295,7 +295,7 @@ function renderSupply(){
  if(prodError)h+=`<div class=empty>Не загрузилось: ${esc(prodError)}</div>`;
  let last='';
  h+=list.map(x=>{const s=supplyQty(x,supplyTab),head=x.kind!==last?`<div class=sectionTitle><b>${KIND_ICON[x.kind]} ${KIND_NAME[x.kind]}</b></div>`:'';last=x.kind;
-  return head+`<button class=supRow onclick="openSupplyGroup('${esc(x.key)}')"><div><b>${esc(x.name)} ${esc(x.size)}</b><span>${supplyTab==='order'?`нужно ${num(x.need,x.sheet?2:1)} ${x.unit} · есть ${num(x.have,x.sheet?2:1)}${x.ordered?` · заказано ${num(x.ordered,1)}`:''}`:`${[...x.suppliers].map(esc).join(', ')||'поставщик не указан'}${x.orderedOn?` · заказано ${fmt(x.orderedOn)} · ждём ${Math.max(0,-days(x.orderedOn))} дн.`:''}`}</span></div><div class=supBig>${s.big}${s.sub?`<small>${s.sub}</small>`:''}</div></button>`}).join('')||(prodError?'':`<div class=empty>${supplyTab==='order'?'Заказывать нечего 👍<br>Материалы появятся, когда в объектах будут детали со статусом «к заказу».':'Нет заказанного, которое ждём'}</div>`);
+  return head+`<button class=supRow onclick="openSupplyGroup('${esc(x.key)}')"><div><b>${esc(x.name)} ${esc(x.size)}</b><span>${supplyTab==='order'?`нужно ${num(x.need,x.sheet?2:1)} ${x.unit} · есть ${num(x.have,x.sheet?2:1)}${x.ordered?` · заказано ${num(x.ordered,1)}`:''}`:`${[...x.suppliers].map(esc).join(', ')||'поставщик не указан'}${x.orderedOn?` · заказано ${fmt(x.orderedOn)} · ждём ${Math.max(0,-days(x.orderedOn))} дн.`:''}`}</span></div><div class=supBig>${s.big}${s.sub?`<small>${s.sub}</small>`:''}</div></button>`}).join('')||(prodError?'':`<div class=empty>${supplyTab==='order'?'Заказывать нечего<br>Материалы появятся, когда в объектах будут детали со статусом «к заказу».':'Нет заказанного, которое ждём'}</div>`);
  const tot=list.reduce((s,x)=>s+(supplyTab==='order'&&x.cost?x.cost:0),0);if(tot)h+=`<div class=info><div class=kvRow><span><b>К заказу по прайсу</b></span><b>${rub(tot)}</b></div><div class=small>по позициям, привязанным к прайсу; целые хлысты и листы</div></div>`;
  if(supplyTab==='order'&&nO)h+=`<div class=stickyActions><button class="btn secondary" onclick="openSupplyText()">Заявка текстом</button><button class=btn onclick="orderAll()">Всё заказано ✓</button></div>`;
  $('supplyBody').innerHTML=h;

@@ -1,11 +1,11 @@
-:root{--popup-radius:20px;--control-radius:12px;--primary:#315e50;--primary-dark:#243e36;--primary-light:#4a7d6d;--bg:#f5f7f6;--card-bg:#fff;--text:#17212b;--text-secondary:#5d6d7e;--border:#d9dfe4;--green:#4caf50;--orange:#ff9800;--red:#e74c3c;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.08)}
+:root{--popup-radius:20px;--control-radius:12px;--primary:#3f8068;--primary-dark:#2f6452;--primary-light:#5a9a80;--bg:#eef3f0;--card-bg:#fff;--text:#17212b;--text-secondary:#5d6d7e;--border:#d9dfe4;--green:#4caf50;--orange:#ff9800;--red:#e74c3c;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.08)}
 
 *{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px;-webkit-text-size-adjust:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100dvh;padding-bottom:64px;overflow-x:hidden}
 
 /* Auth gate */
-.authgate{position:fixed;inset:0;z-index:1000;background:linear-gradient(135deg,#315e50 0%,#1a3530 100%);display:flex;align-items:center;justify-content:center;transition:opacity .3s,visibility .3s}
+.authgate{position:fixed;inset:0;z-index:1000;background:linear-gradient(135deg,#3f8068 0%,#1a3530 100%);display:flex;align-items:center;justify-content:center;transition:opacity .3s,visibility .3s}
 .authgate.on{opacity:1;visibility:visible}
 .authgate:not(.on){opacity:0;visibility:hidden;pointer-events:none}
 .authcard{background:#fff;border-radius:var(--popup-radius);padding:36px 32px;width:min(420px,90vw);box-shadow:0 20px 60px rgba(0,0,0,0.3)}
@@ -196,7 +196,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .roundedNativeSelect{display:none!important}
 .selectTrigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;width:100%;border:1px solid #d9dfe4;border-radius:var(--control-radius);padding:11px;background:#fff;color:#17212b;font:inherit;text-align:left;cursor:pointer}
 .selectTrigger>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.selectTrigger:focus-visible,.selectOption:focus-visible,.selectPopupClose:focus-visible{outline:2px solid #315e50;outline-offset:2px}
+.selectTrigger:focus-visible,.selectOption:focus-visible,.selectPopupClose:focus-visible{outline:2px solid #3f8068;outline-offset:2px}
 .selectTrigger:disabled{opacity:.5;cursor:default}
 .selectChevron{color:#5e786b;font-size:17px;line-height:1;flex-shrink:0}
 .field .selectTrigger{margin-top:4px;font-size:14px;font-weight:400}
@@ -206,12 +206,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .selectLayer[hidden]{display:none}
 .selectPopup{position:fixed;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;background:#f7faf8;border:1px solid #d4e1d8;border-radius:var(--popup-radius);box-shadow:0 16px 48px #172e2440;padding:10px}
 .selectPopupHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 4px 8px;border-bottom:1px solid #e0e9e3;flex-shrink:0}
-.selectPopupHead b{font-size:14px;color:#315e50}
+.selectPopupHead b{font-size:14px;color:#3f8068}
 .selectPopupClose{border:0;background:#e8efea;border-radius:var(--control-radius);width:36px;height:36px;font-size:22px;color:#53645b;cursor:pointer;flex-shrink:0}
 .selectOptions{overflow-y:auto;overscroll-behavior:contain;padding:6px 2px 2px;min-height:0;scrollbar-width:thin}
 .selectOption{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;margin:3px 0;border:0;border-radius:var(--control-radius);padding:11px 12px;background:transparent;color:#243a2d;font:inherit;font-size:14px;text-align:left;overflow-wrap:anywhere;cursor:pointer}
 .selectOption:hover,.selectOption:focus-visible{background:#e7f0ea}
-.selectOption[aria-selected=true]{background:#315e50;color:white;font-weight:700}
+.selectOption[aria-selected=true]{background:#3f8068;color:white;font-weight:700}
 .selectOption[aria-selected=true]:after{content:'✓';flex-shrink:0}
 .selectOption:disabled{opacity:.4;cursor:default}
 
@@ -227,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 /* Wood statuses */
 .woodStatuses{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0 8px}
 .woodStatus{display:flex;align-items:center;gap:8px;padding:10px 8px;border:1px solid #d7e4dc;border-radius:12px;background:#f7faf8;font-size:12px;font-weight:650;color:#53665a;cursor:pointer;min-height:46px}
-.woodStatus input{width:21px;height:21px;margin:0;flex-shrink:0;accent-color:#315e50}
+.woodStatus input{width:21px;height:21px;margin:0;flex-shrink:0;accent-color:#3f8068}
 .woodStatus.on{background:#e7f3eb;border-color:#a8cbb6;color:#285e45}
 @media(max-width:350px){.woodStatus{font-size:11px;gap:5px;padding:9px 6px}}
 
@@ -240,12 +240,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .woodFormPosition{padding:10px 0;border-bottom:1px solid #dce6df}
 .woodPositionHead{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:#6e8276;min-height:20px}
 .woodRemovePosition{border:0;background:transparent;color:#8a5656;font-size:20px;padding:0 6px;cursor:pointer}
-.woodAddPosition{border:0;background:transparent;padding:10px 0;color:#315e50;font-size:13px;font-weight:750;cursor:pointer}
+.woodAddPosition{border:0;background:transparent;padding:10px 0;color:#3f8068;font-size:13px;font-weight:750;cursor:pointer}
 .woodNoteDetails{margin-top:7px}.woodNoteDetails summary{font-size:11px;color:#718078;padding:4px 0;cursor:pointer}.woodNoteDetails summary:before{content:'+ '}.woodNoteDetails[open] summary:before{content:'− '}
 .srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .woodMeterSummary{border:1px solid #cfdfd3;border-radius:16px;padding:12px;background:#fff;margin:12px 0 16px}
-.woodMeterHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px;font-size:14px}.woodMeterHead strong{color:#315e50;white-space:nowrap}
-.woodMeterRow{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #e6ece8;padding-top:9px;margin-top:9px;font-size:13px}.woodMeterRow span{display:block;font-size:11px;color:#728078;margin-top:3px}.woodMeterRow strong{color:#315e50;white-space:nowrap}
+.woodMeterHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px;font-size:14px}.woodMeterHead strong{color:#3f8068;white-space:nowrap}
+.woodMeterRow{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #e6ece8;padding-top:9px;margin-top:9px;font-size:13px}.woodMeterRow span{display:block;font-size:11px;color:#728078;margin-top:3px}.woodMeterRow strong{color:#3f8068;white-space:nowrap}
 
 /* Card items styling */
 .card .items{font-size:16px;font-weight:850;line-height:1.25;color:#173e2c;background:#e5f0e8;border:1px solid #c9dece;border-left:4px solid #448360;border-radius:10px;padding:9px;margin-top:8px;min-height:0;overflow-wrap:anywhere}
@@ -259,7 +259,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 /* Wood wheel */
 .woodWheelLayer{position:fixed;inset:0;z-index:710;background:#18332655;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px max(12px,env(safe-area-inset-bottom))}.woodWheelLayer[hidden]{display:none}
 .woodWheelPanel{width:min(540px,100%);background:#f7faf8;border:1px solid #d3e1d8;border-radius:20px;box-shadow:0 12px 42px #153b2933;overflow:hidden;padding:10px 12px}
-.woodWheelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #dce7df;padding:0 0 8px}.woodWheelHead b{font-size:14px;color:#315e50}.woodWheelHead button{border:0;border-radius:10px;background:transparent;padding:9px 4px;font-size:13px;font-weight:700;color:#5d7668;cursor:pointer}.woodWheelHead .wheelDone{color:#285e44}
+.woodWheelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #dce7df;padding:0 0 8px}.woodWheelHead b{font-size:14px;color:#3f8068}.woodWheelHead button{border:0;border-radius:10px;background:transparent;padding:9px 4px;font-size:13px;font-weight:700;color:#5d7668;cursor:pointer}.woodWheelHead .wheelDone{color:#285e44}
 .woodWheelColumns{display:flex;gap:16px;padding-top:12px}.woodWheelColumn{flex:1;min-width:0}.woodWheelLabel{text-align:center;font-size:11px;font-weight:700;color:#738578;margin-bottom:4px}
 .woodWheelViewport{position:relative;height:180px}.woodWheelCenter{position:absolute;top:72px;left:0;right:0;height:36px;border-top:1px solid #b8cebf;border-bottom:1px solid #b8cebf;background:#e5f0e9;border-radius:8px;pointer-events:none}
 .woodWheelTrack{position:relative;height:180px;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;scrollbar-width:none;padding:72px 0;box-sizing:border-box;touch-action:pan-y;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(to bottom,transparent,#000 34%,#000 66%,transparent)}
@@ -578,3 +578,45 @@ span.st{min-height:0;padding:4px 8px;min-width:0}
 .sectionTitle .kI{margin-right:6px}
 .ohRow{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;background:#fff;border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin:5px 0;font:inherit;font-size:14px;cursor:pointer;text-align:left}
 .ohRow b{white-space:nowrap}
+/* v54 — стиль: светлее зелёный, единые карточки, значки Phosphor */
+:root{--radius:16px}
+svg.ph{flex:none;vertical-align:-.18em}
+.tab i{display:flex;justify-content:center;font-style:normal}.tab i svg{width:22px;height:22px}
+.info,.focus,.debtrow,.task,.prod,.supRow2,.mw,.rateRow,.ohRow,.catCard,.fillBox,.kpi button,.prio,.sumStrip,.tk,.supRow,.catRow,.priceRow,.wr2,.asRow,.ocard2,.acc{border-color:#e1eae5!important;box-shadow:0 2px 10px rgba(40,80,60,.06)}
+.tI{color:var(--primary);margin-right:2px}
+.kI svg{width:16px;height:16px}.kI.metal{color:#3f6fa8}.kI.wood{color:#a5702f}.kI.other{color:#6e7d89}.kI.paint{color:#8e4fb0}
+.catSec button i svg{width:28px;height:28px;color:var(--primary)}
+.catTabs svg{width:16px;height:16px}
+.catCard .im{color:var(--primary)}.catCard .im svg{width:34px;height:34px}
+.segBar button svg{width:16px;height:16px}
+.segBar.seg5 button{font-size:11.5px;padding:7px 2px}
+/* лента объектов */
+.ocard2{background:#fff;border:1px solid var(--border);border-left:5px solid var(--green)!important;border-radius:16px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
+.ocard2.orange{border-left-color:var(--orange)!important}.ocard2.red{border-left-color:var(--red)!important}
+.ocT{display:flex;align-items:center;gap:10px}.ocAv{width:40px;height:40px;border-radius:12px;background:#e6f1ec;color:var(--primary);display:flex;align-items:center;justify-content:center;flex:none}.ocAv svg{width:24px;height:24px}
+.ocN{flex:1;min-width:0}.ocN b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ocN small{display:block;color:var(--text-secondary);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ocDue2{font-size:12px;font-weight:800;border-radius:8px;padding:3px 8px;white-space:nowrap;background:#eef1f3;color:#5d6d7e}.ocDue2.r{background:#fde8e6;color:#b23a2c}.ocDue2.o{background:#fff1d6;color:#9a6200}.ocDue2.g{background:#dff1e0;color:#2e7d32}
+.ocStp{display:flex;gap:3px;margin:10px 0 4px}.ocStp i{flex:1;height:6px;border-radius:3px;background:#e6ebee}.ocStp i.d{background:#7cc49a}.ocStp i.n{background:var(--primary)}
+.ocStl{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)}.ocStl b{color:var(--text)}.ocStl svg{color:var(--primary)}
+.ocNums{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}.ocNums div{background:#f4f7f5;border-radius:9px;padding:5px 8px;font-size:10.5px;color:var(--text-secondary)}.ocNums b{display:block;font-size:14px;color:var(--text)}
+.ocBadges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.ocBadges .bg{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:8px;padding:3px 8px;background:#eef1f3;color:#4b5a66}
+.ocBadges .m{background:#e3ecf7;color:#2c5a8a}.ocBadges .p{background:#f1e6f7;color:#7b3fa0}.ocBadges .w{background:#f6ead9;color:#8a5a22}.ocBadges .r{background:#fde8e6;color:#b23a2c}
+#grid{display:block}
+/* карточка: сворачиваемые блоки */
+.acc{background:#fff;border:1px solid var(--border);border-radius:16px;margin:8px 0;overflow:hidden}
+.accH{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:11px 12px;font:inherit;text-align:left;cursor:pointer;color:var(--text)}
+.accH b{font-size:14.5px;flex:none}.accS{flex:1;min-width:0;text-align:right;color:var(--text-secondary);font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.accIc{width:34px;height:34px;border-radius:10px;background:#e6f1ec;color:var(--primary);display:flex;align-items:center;justify-content:center;flex:none}
+.accCh{color:var(--text-secondary);transition:transform .2s;transform:rotate(-90deg);display:flex}.acc.open .accCh{transform:none}
+.accB{display:none;padding:0 12px 10px}.acc.open .accB{display:block}
+.accInner{border:0!important;box-shadow:none!important;padding:0!important;margin:0 0 6px!important;background:none!important}
+.accHide{display:none!important}
+.accDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:1px}
+/* новая деталь */
+.npSel{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#eef8f2;border:1.5px solid #9fd3b2;border-radius:12px;padding:9px 11px;margin:6px 0}.npSel b{display:block;font-size:14px}.npSel span{font-size:12px;color:var(--text-secondary)}
+/* сварщики с долями */
+.asBar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#e6ebee;margin:6px 0 10px}.asBar i{display:block}
+.asRow{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 8px;margin:6px 0}.asRow.on{border-color:#9fd3b2!important;background:#f3faf6}
+.asName{flex:1;border:0;background:none;font:inherit;font-weight:700;font-size:14px;text-align:left;cursor:pointer;padding:6px 2px;display:flex;align-items:center;gap:6px}.asName small{font-weight:500;color:var(--text-secondary)}
+.asQ{display:flex;align-items:center;gap:6px}.asQ button{width:38px;height:36px;border:0;border-radius:10px;background:#e8efea;color:var(--primary);font-size:19px;font-weight:800;cursor:pointer}.asQ b{min-width:28px;text-align:center;font-size:16px}
+.opSplit{font-size:11.5px;color:var(--text-secondary);margin-top:4px}

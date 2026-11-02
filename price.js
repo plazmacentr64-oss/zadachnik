@@ -1,10 +1,10 @@
 'use strict';
 // v46: прайс металла (только владелец), выбор материала из прайса, лист в м² + обрезки, цены процентами
 let priceItems=[],wsSettings={},priceCat='',priceQ='',priceTab='metal';
-const PRICE_TABS=[['metal','⚙ Металл'],['wood','🪵 Дерево'],['paint','🎨 Краска'],['hw','🔩 Метизы']];
+const PRICE_TABS=[['metal','Металл','gear-six'],['wood','Дерево','tree'],['paint','Краска','paint-roller'],['hw','Метизы','nut']];
 const priceTabOf=c=>/дерев|брус|доск|листвен|сосн|осин|фанер|вагонк/i.test(c||'')?'wood':/краск|эмал|грунт|порош|лак|раствор|ral/i.test(c||'')?'paint':/метиз|болт|гайк|саморез|анкер|шайб|винт|заклеп|шпильк/i.test(c||'')?'hw':'metal';
 const inTab=p=>priceTabOf(p.category)===priceTab;
-const tabName=()=>PRICE_TABS.find(t=>t[0]===priceTab)[1].replace(/^\S+ /,'');
+const tabName=()=>PRICE_TABS.find(t=>t[0]===priceTab)[1];
 const wastePct=()=>{const v=+wsSettings.sheet_waste_pct;return wsSettings.sheet_waste_pct!=null&&isFinite(v)&&v>=0&&v<=200?v:20};
 const priceById=id=>id?priceItems.find(p=>p.id===id):null;
 const sheetArea=p=>(+p.sheet_w||0)*(+p.sheet_l||0)/1e6;
@@ -49,9 +49,9 @@ function openPriceList(){
  const first=priceItems.find(p=>p.supplier&&p.supplier!=='Своя')||priceItems[0],tabItems=priceItems.filter(inTab);
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Прайс</h2>
  <div class=summary>${first?`${esc(first.supplier||'Поставщик')} · от ${first.price_date?parseDate(first.price_date).toLocaleDateString('ru-RU'):'—'}`:'Прайс не загружен'}</div>
- <div class="segBar seg4" id=prTabs>${PRICE_TABS.map(([k,l])=>`<button type=button class="${priceTab===k?'on':''}" data-t=${k}>${l} · ${priceItems.filter(p=>priceTabOf(p.category)===k).length}</button>`).join('')}</div>
+ <div class="segBar seg4" id=prTabs>${PRICE_TABS.map(([k,l,i])=>`<button type=button class="${priceTab===k?'on':''}" data-t=${k}>${typeof ic==='function'?ic(i,16):''} ${l} · ${priceItems.filter(p=>priceTabOf(p.category)===k).length}</button>`).join('')}</div>
  ${priceTab==='metal'?`<div class=info><div class=kvRow><span>Обрезки листа</span><b>${num(wastePct())}%</b></div><div class=kvRow><span>Изменено вручную или процентом</span><b>${tabItems.filter(p=>+p.price!==+p.base_price).length} поз.</b></div></div>`:''}
- ${priceTab==='wood'?`<button class="btn wide" onclick="openWoodGrid()" style="margin:4px 0 8px">🪵 Брус: таблица «сечение × порода»</button>`:''}
+ ${priceTab==='wood'?`<button class="btn wide" onclick="openWoodGrid()" style="margin:4px 0 8px">Брус: таблица «сечение × порода»</button>`:''}
  <input id=prQ class=searchIn placeholder="🔍 Поиск: ${priceTab==='metal'?'40х20, лист 2, уголок 50':priceTab==='paint'?'эмаль, грунт, RAL':priceTab==='hw'?'болт М8, саморез':'лиственница, доска'}" value="${esc(priceQ)}">
  ${cats.length>1?'':'<!--'}<div class="chipRow chipScroll" id=prCats><button class="chip ${!priceCat?'on':''}" data-c="">Все</button>${cats.map(c=>`<button class="chip ${priceCat===c?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>${cats.length>1?'':'-->'}
  <div id=prList></div>

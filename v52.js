@@ -1,6 +1,6 @@
 'use strict';
 // v52: справочник по разделам (скамьи, урны, перголы, заборы, прочее), быстрая отметка сварки, вкладка цеха запоминается.
-const CAT_SECTIONS=[['bench','🪑','Скамьи','скамья'],['urn','🗑','Урны','урна'],['pergola','⛩','Перголы','пергола'],['fence','🚧','Заборы','забор'],['other','📦','Прочее','изделие']];
+const CAT_SECTIONS=[['bench',ic('park',26),'Скамьи','скамья'],['urn',ic('trash',26),'Урны','урна'],['pergola',ic('tent',26),'Перголы','пергола'],['fence',ic('columns',26),'Заборы','забор'],['other',ic('cube',26),'Прочее','изделие']];
 const catGuess=n=>/скам|лав/i.test(n)?'bench':/урн/i.test(n)?'urn':/перго|беседк|навес/i.test(n)?'pergola':/забор|огражд/i.test(n)?'fence':'other';
 const catOf=i=>CAT_SECTIONS.some(s=>s[0]===i.category)?i.category:catGuess(i.name||'');
 const secOf=k=>CAT_SECTIONS.find(s=>s[0]===k)||CAT_SECTIONS[4];
