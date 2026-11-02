@@ -26,6 +26,7 @@ async function loadProd(){
  }catch(e){prodError=e.message||String(e);console.warn('prod',e)}
  if(typeof loadSalary==='function'&&isOwner())await loadSalary();
  if(typeof loadPrice==='function'&&isOwner()&&!priceItems.length)await loadPrice();
+ if(typeof loadEco==='function'&&isOwner())await loadEco();
 }
 async function reloadProd(){await loadProd();renderCurrent();if(currentDetail)refreshDetail(currentDetail)}
 
@@ -75,7 +76,7 @@ function matEdHtml(m,own,ro){
  else if(shape==='linear')g=`<div class=edGrid4>${p?'':`<label>${m.kind==='wood'?'Сечение':'Размер'}<input id="ms_${m.id}" value="${esc(m.size||'')}" placeholder="${m.kind==='wood'?'40×90':'40×20×2'}" ${ro}></label>`}<label>Длина, мм<input id="ml_${m.id}" inputmode=numeric value="${m.length_mm||''}" placeholder="мм" ${ro} ${rc}></label><label>Деталей на 1 шт<input id="mq_${m.id}" inputmode=decimal value="${num(m.qty||1)}" ${ro} ${rc}></label></div>`;
  else g=`<div class=edGrid4>${p?'':`<label>Размер<input id="ms_${m.id}" value="${esc(m.size||'')}" placeholder="—" ${ro}></label>`}<label>Кол-во на 1 шт<input id="mq_${m.id}" inputmode=decimal value="${num(m.qty||1)}" ${ro} ${rc}></label><label>Ед.<select id="mu_${m.id}" ${ro}>${[...new Set([m.unit||'шт',...UNITS])].map(u=>`<option ${m.unit===u?'selected':''}>${u}</option>`).join('')}</select></label></div>`;
  return `<div class=matEd><div class=edRow><select id="mk_${m.id}" aria-label="Вид" ${ro} ${ch}>${['metal','wood','other'].map(k=>`<option value=${k} ${m.kind===k?'selected':''}>${KIND_ICON[k]} ${KIND_NAME[k]}</option>`).join('')}</select>${m.kind==='metal'?`<select id="msh_${m.id}" aria-label="Форма" ${ro} ${ch} ${p?'disabled':''}><option value=linear ${shape==='linear'?'selected':''}>Погонаж</option><option value=sheet ${shape==='sheet'?'selected':''}>Лист</option><option value=piece ${shape==='piece'?'selected':''}>Штучно</option></select>`:''}${del}</div>
- <div class=edRow><input id="mn_${m.id}" list=matNames value="${esc(m.name)}" placeholder="${m.kind==='wood'?'Лиственница':m.kind==='metal'?(shape==='sheet'?'Лист 2,0 х/к':'Труба проф.'):'Болт М8×60'}" aria-label="Материал" ${ro} ${p?'readonly':''}>${own&&m.kind==='metal'&&priceItems.length?`<button class="chip" type=button onclick="pickMatFromPrice('${m.id}')">${p?'Сменить':'Из прайса'}</button>`:''}</div>
+ <div class=edRow><input id="mn_${m.id}" list=matNames value="${esc(m.name)}" placeholder="${m.kind==='wood'?'Лиственница':m.kind==='metal'?(shape==='sheet'?'Лист 2,0 х/к':'Труба проф.'):'Болт М8×60'}" aria-label="Материал" ${ro} ${p?'readonly':''}>${own&&priceItems.length?`<button class="chip" type=button onclick="pickMatFromPrice('${m.id}')">${p?'Сменить':'Из прайса'}</button>`:''}</div>
  ${p?`<div class=small style="margin:2px 0 0">${priceUnitText(p)} · ${esc(priceSub(p))} · <button class=linkBtn style="padding:0" onclick="readCatForm();const x=catDraft.mats.find(x=>x.id==='${m.id}');x.price_item_id=null;renderCatItem()">отвязать от прайса</button></div>`:''}
  ${g}${c?`<div class=calcLine2 id="mc_${m.id}">${c.text} = <b>${rub(c.sum)}</b></div>`:''}</div>`;
 }
@@ -83,7 +84,8 @@ function matRecalc(){readCatForm();catDraft.mats.forEach(m=>{const el=$('mc_'+m.
 function pickMatFromPrice(matId){
  readCatForm();
  openPricePicker(p=>{let m=catDraft.mats.find(x=>x.id===matId);if(!m){m={id:uuid(),kind:'metal',qty:1};catDraft.mats.push(m)}
-  Object.assign(m,{kind:'metal',price_item_id:p.id,name:p.name,size:'',shape:p.kind,stock_len_mm:p.kind==='linear'?(p.stock_len_mm||6000):null,sheet_w:p.sheet_w||null,sheet_l:p.sheet_l||null,unit:p.kind==='piece'?(p.unit||'шт'):'шт'});
+  const kind=/дерев|лиственн|сосн|доск|брус/i.test(p.category+' '+p.name)?'wood':p.kind==='piece'&&!/сетк/i.test(p.category)?'other':'metal';
+  Object.assign(m,{kind,price_item_id:p.id,name:p.name,size:'',shape:p.kind,stock_len_mm:p.kind==='linear'?(p.stock_len_mm||6000):null,sheet_w:p.sheet_w||null,sheet_l:p.sheet_l||null,unit:p.kind==='piece'?(p.unit||'шт'):'шт'});
   if(p.kind!=='sheet')m.width_mm=null;renderCatItem()},()=>renderCatItem());
 }
 async function saveCatItem(){
@@ -295,11 +297,17 @@ function openSupplyGroup(key){
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>${esc(x.name)} ${esc(x.size)}</h2><div class=summary>нужно ${num(x.need,1)} ${x.unit} · есть ${num(x.have,1)} · заказано ${num(x.ordered,1)} · к заказу ${num(x.order,1)}</div>
  <div class=info><div class=label>По объектам</div>${x.parts.map(p=>`<div class=doc><span>${esc(projName(p.project_id))}<br><span class=small>${p.note?esc(p.note)+' · ':''}${partLine(p)}</span></span><span class="st st_${p.status}">${PART_LABEL[p.status]}</span></div>`).join('')}</div>
  ${x.order>0?`<label class=field>Поставщик<input id=sgSup placeholder="например: Металлобаза Юг" value="${esc([...x.suppliers][0]||'')}"></label><button class="btn wide" id=sgOrder>Заказал ${supplyQty(x,'order').big}</button>`:''}
- ${x.ordered>0?`<button class="btn wide" id=sgCame style="margin-top:8px">Пришло всё заказанное</button>`:''}`;
+ ${x.ordered>0?`${isOwner()?`<label class=field>Сумма по счёту, ₽ — запишется в расходы объектов<input id=sgSum inputmode=decimal value="${(()=>{const c=x.parts.filter(p=>p.status==='ordered').reduce((s,p)=>s+(typeof partCost==='function'?partCost(p):0),0);return c?moneyText(Math.round(c*100)/100):''})()}" placeholder="можно пусто"></label>`:''}<button class="btn wide" id=sgCame style="margin-top:8px">Пришло всё заказанное</button>`:''}`;
  openModal();
  const set=async(from,to,extra,b)=>{if(b.disabled)return;b.disabled=true;try{for(const p of x.parts.filter(p=>p.status===from))await q(sb.from('shop_parts').update({status:to,updated_at:new Date().toISOString(),...extra}).eq('id',p.id));await loadProd();closeModal();renderCurrent();toast(to==='ordered'?'Отмечено «заказано»':'Пришло — в цеху теперь «есть»')}catch(e){b.disabled=false;failSave(e)}};
  if($('sgOrder'))$('sgOrder').onclick=e=>set('order','ordered',{supplier:$('sgSup').value.trim(),ordered_on:localISO()},e.target);
- if($('sgCame'))$('sgCame').onclick=e=>set('ordered','stock',{},e.target);
+ if($('sgSum'))$('sgSum').oninput=e=>fmtMoneyInput(e.target);
+ if($('sgCame'))$('sgCame').onclick=async e=>{const sum=$('sgSum')?moneyVal($('sgSum').value):0,arr=x.parts.filter(p=>p.status==='ordered');
+  if(sum>0&&isOwner()){const w=arr.map(p=>(typeof partCost==='function'?partCost(p):0)||(x.sheet?partArea(p):x.linear?partMeters(p):(+p.qty||0))),tw=w.reduce((a,b)=>a+b,0)||1,by=new Map();arr.forEach((p,i)=>by.set(p.project_id,(by.get(p.project_id)||0)+w[i]/tw*sum));
+   const rows=[...by.entries()].map(([pid,a])=>({workspace_id:currentWorkspace,project_id:pid,category:'materials',amount:Math.round(a*100)/100,spent_on:localISO(),method:'bank',note:`${x.name} ${x.size}`.trim(),source:'supply',created_by:currentUser.id})).filter(r=>r.amount);
+   const diff=Math.round((sum-rows.reduce((s,r)=>s+r.amount,0))*100)/100;if(rows.length&&diff)rows[rows.length-1].amount=Math.round((rows[rows.length-1].amount+diff)*100)/100;
+   try{await q(sb.from('project_expenses').insert(rows))}catch(err){return failSave(err)}}
+  set('ordered','stock',{},e.target)};
 }
 function openSupplyText(){
  const t=supplyText(supplyGroups());

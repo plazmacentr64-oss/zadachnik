@@ -304,7 +304,7 @@ function fillTemplate(template, project) {
     director: c.director || blank,
     contractor: project.contractor || 'Не указан',
     object_name: project.name || 'Объект без названия',
-    items: (project.items || '').trim() || 'Не указано',
+    items: (typeof specLines !== 'undefined' && specLines.some(l => l.project_id === project.id) ? specLines.filter(l => l.project_id === project.id).map(l => l.item_name + ' — ' + String(+l.qty).replace('.', ',') + ' шт').join('; ') : (project.items || '').trim()) || 'Не указано',
     money: formatMoney(total),
     advance: formatMoney(paid),
     remaining: formatMoney(Math.max(0, total - paid)),
@@ -333,6 +333,8 @@ function fillTemplate(template, project) {
 }
 
 function generateItemsTable(project, cols) {
+  const spec = typeof specDocRows === 'function' ? specDocRows(project.id) : (typeof specLines !== 'undefined' ? specLines.filter(l => l.project_id === project.id).map(l => ({ name: l.item_name, qty: +l.qty, unit: 'шт', price: 0 })) : []);
+  if (spec.length) return spec.map((r, i) => { const sum = r.price * r.qty, money = v => v ? formatMoney(v) : ''; const priceCols = cols === 6 ? `<td style="text-align:right">${money(r.price)}</td><td style="text-align:right">${money(sum)}</td>` : `<td style="text-align:right">${money(sum)}</td>`; return `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${String(r.qty).replace('.', ',')}</td><td>${r.unit}</td>${priceCols}</tr>`; }).join('\n');
   // Строки таблицы из «Предмета договора»: «Лавочки 80 · Урны 80 шт»
   const parts = String(project.items || '').trim().split(/\s*[·•;\n]\s*|,\s+(?=\D)/).map(x => x.trim()).filter(Boolean);
   if (!parts.length) return '';

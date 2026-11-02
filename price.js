@@ -49,6 +49,7 @@ function openPriceList(){
  <input id=prQ class=searchIn placeholder="🔍 Поиск: 40х20, лист 2, уголок 50" value="${esc(priceQ)}">
  <div class="chipRow chipScroll" id=prCats><button class="chip ${!priceCat?'on':''}" data-c="">Все</button>${cats.map(c=>`<button class="chip ${priceCat===c?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
  <div id=prList></div>
+ <button class="btn secondary wide" onclick="openOwnPrice()" style="margin-top:8px">+ Своя позиция (дерево, метизы, краска…)</button>
  <div class=stickyActions><button class="btn secondary" onclick="pickPriceFile()">Загрузить .xls</button><button class=btn onclick="openPricePct()">% Изменить цены</button></div>`;
  openModal();
  const draw=()=>{const qy=priceQ.toLowerCase().replace(/\s+/g,'').replace(/(\d)[xх*](?=\d)/g,'$1×'),list=priceItems.filter(p=>(!priceCat||p.category===priceCat)&&(!qy||p.name.toLowerCase().replace(/\s+/g,'').includes(qy)));
@@ -121,4 +122,20 @@ function openPricePicker(onPick,onBack){
  $('pkCats').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;cat=b.dataset.c;[...$('pkCats').children].forEach(x=>x.classList.toggle('on',x===b));draw()};
  $('pkList').onclick=e=>{const b=e.target.closest('[data-id]');if(b)onPick(priceById(b.dataset.id))};
  $('pkBack').onclick=onBack;draw();setTimeout(()=>$('pkQ')?.focus(),50);
+}
+
+// Своя позиция прайса: дерево за метр, метизы и краска за штуку/кг, свой лист
+function openOwnPrice(){
+ const cats=['Дерево','Метизы','Краска и грунт','Прочее'];let kind='linear';
+ $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Своя позиция</h2>
+ <label class=field>Раздел<input id=opCat list=opCats value="Дерево"><datalist id=opCats>${[...new Set([...cats,...priceCats()])].map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label>
+ <label class=field>Название<input id=opName placeholder="Лиственница 40×90 / Болт М8×60 / Краска RAL 7016"></label>
+ <div class=chipRow id=opKind><button type=button class="chip on" data-v=linear>За метр (погонаж)</button><button type=button class=chip data-v=piece>За штуку / кг / л</button></div>
+ <div class=inlineRow><label class=field>Цена, ₽<input id=opPrice inputmode=decimal></label><label class=field id=opUnitBox hidden>Ед.<select id=opUnit>${['шт','кг','л','компл','м²','уп'].map(u=>`<option>${u}</option>`).join('')}</select></label><label class=field id=opLenBox>Длина хлыста/доски, м<input id=opLen inputmode=decimal value="6"></label></div>
+ <div class=actions><button class="btn secondary" onclick="openPriceList()">Назад</button><button class=btn id=opSave>Добавить</button></div>`;
+ openModal();$('opPrice').oninput=e=>fmtMoneyInput(e.target);
+ $('opKind').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;kind=b.dataset.v;[...$('opKind').children].forEach(x=>x.classList.toggle('on',x===b));$('opUnitBox').hidden=kind!=='piece';$('opLenBox').hidden=kind!=='linear'};
+ $('opSave').onclick=async()=>{const name=$('opName').value.trim(),cat=$('opCat').value.trim()||'Прочее',pr=moneyVal($('opPrice').value);if(!name)return alert('Укажите название');if(!pr)return alert('Укажите цену');
+  const row={workspace_id:currentWorkspace,category:cat,name,kind,unit:kind==='linear'?'м':$('opUnit').value,stock_len_mm:kind==='linear'?Math.round((qtyVal($('opLen').value)||6)*1000):null,base_price:pr,price:pr,supplier:'Своя',price_date:localISO(),sort:9000+priceItems.length};
+  try{await q(sb.from('price_items').insert(row));await loadPrice();toast('Добавлено в прайс');priceCat=cat;openPriceList()}catch(e){failSave(e)}};
 }
