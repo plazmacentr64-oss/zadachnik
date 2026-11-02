@@ -11,7 +11,8 @@ const qtyVal=s=>{let v=parseFloat(String(s??'').replace(/\s/g,'').replace(',','.
 const normSize=s=>String(s||'').toLowerCase().replace(/[xх*]/g,'×').replace(/\s+/g,'').replace(/,/g,'.');
 const uuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g,()=>(Math.random()*16|0).toString(16));
 const activeProjects=()=>data.filter(o=>o.status!=='Выполнено');
-const projName=id=>data.find(o=>o.id===id)?.name||'—';
+const projName=id=>id?data.find(o=>o.id===id)?.name||'—':'Внутрицеховые';
+const itemUnit=id=>catItems.find(i=>i.id===id)?.unit||'шт';
 async function q(p){const {data:d,error}=await p;if(error)throw error;return d}
 
 async function loadProd(){
@@ -35,21 +36,21 @@ async function reloadProd(){await loadProd();renderCurrent();if(currentDetail)re
 function openCatalog(){
  const own=isOwner();
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Справочник изделий</h2><div class=small>Изделие описывается один раз: какие работы (сдельно ₽/шт или посуточно чел-дн/шт) и какие материалы на 1 шт. Потом его можно добавить в спецификацию любого объекта.</div>
- ${catItems.filter(i=>!i.archived).map(i=>{const o=catOps.filter(x=>x.item_id===i.id),m=catMats.filter(x=>x.item_id===i.id);return `<button class=catRow onclick="openCatItem('${i.id}')"><b>${esc(i.name)}</b><span>${o.length} ${plural(o.length,'работа','работы','работ')} · ${m.length} ${plural(m.length,'материал','материала','материалов')}${own&&typeof itemMatCost==='function'&&itemMatCost(i.id).priced?' · материалы '+rub(itemMatCost(i.id).sum):''}</span></button>`}).join('')||'<div class=empty>Справочник пуст. Добавьте первое изделие — например, «Скамья «Парк»».</div>'}
+ ${catItems.filter(i=>!i.archived).map(i=>{const o=catOps.filter(x=>x.item_id===i.id),m=catMats.filter(x=>x.item_id===i.id);return `<button class=catRow onclick="openCatItem('${i.id}')"><b>${esc(i.name)}${(i.unit||'шт')!=='шт'?` <span class=small>· ${esc(i.unit)}</span>`:''}</b><span>${o.length} ${plural(o.length,'работа','работы','работ')} · ${m.length} ${plural(m.length,'материал','материала','материалов')}${own&&typeof itemMatCost==='function'&&itemMatCost(i.id).priced?' · материалы '+rub(itemMatCost(i.id).sum):''}</span></button>`}).join('')||'<div class=empty>Справочник пуст. Добавьте первое изделие — например, «Скамья «Парк»».</div>'}
  ${own?`<button class="btn wide" style="margin-top:12px" onclick="openCatItem()">+ Новое изделие</button>`:''}`;
  openModal();
 }
 let catDraft=null;
 function openCatItem(id,backProject){
  const i=catItems.find(x=>x.id===id);
- catDraft={id:i?.id||null,name:i?.name||'',note:i?.note||'',back:backProject||'',
+ catDraft={id:i?.id||null,name:i?.name||'',note:i?.note||'',unit:i?.unit||'шт',back:backProject||'',
   ops:catOps.filter(x=>x.item_id===id).map(x=>({...x})),mats:catMats.filter(x=>x.item_id===id).map(x=>({...x}))};
  if(!i){catDraft.ops=[{id:uuid(),name:'Сварка',pay_type:'piece',rate:0,norm_days:0},{id:uuid(),name:'Покраска',pay_type:'piece',rate:0,norm_days:0},{id:uuid(),name:'Монтаж на объекте',pay_type:'day',rate:0,norm_days:0}]}
  renderCatItem();openModal();
 }
 function readCatForm(){
  if(!catDraft||!$('ciName'))return;
- catDraft.name=$('ciName').value.trim();catDraft.note=$('ciNote').value.trim();
+ catDraft.name=$('ciName').value.trim();catDraft.note=$('ciNote').value.trim();if($('ciUnit'))catDraft.unit=$('ciUnit').value;
  catDraft.ops.forEach(o=>{o.name=$('on_'+o.id).value.trim();o.pay_type=$('ot_'+o.id).value;const v=$('ov_'+o.id).value;if(o.pay_type==='piece'){o.rate=moneyVal(v);o.norm_days=0}else{o.norm_days=qtyVal(v);o.rate=0}});
  catDraft.mats.forEach(m=>{m.kind=$('mk_'+m.id).value;m.name=$('mn_'+m.id).value.trim();m.size=$('ms_'+m.id)?$('ms_'+m.id).value.trim():'';m.shape=m.kind==='other'?'piece':m.kind==='wood'?'linear':($('msh_'+m.id)?.value||m.shape||'linear');m.length_mm=Math.round(qtyVal($('ml_'+m.id)?.value))||null;m.width_mm=Math.round(qtyVal($('mw_'+m.id)?.value))||null;m.qty=qtyVal($('mq_'+m.id).value)||1;m.unit=$('mu_'+m.id)?.value||m.unit||'шт';if($('mws_'+m.id)){m.wood_slot_id=m.kind==='wood'?($('mws_'+m.id).value||null):null;const ws=m.wood_slot_id&&woodSlot(m.wood_slot_id);if(ws){m.name=ws.name;m.size=ws.nominal;m.price_item_id=null}}else if(m.kind!=='wood')m.wood_slot_id=null;if(m.shape==='piece'&&m.kind==='metal'&&!$('mu_'+m.id))m.unit=m.unit||'шт'});
 }
@@ -59,11 +60,12 @@ function renderCatItem(){
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>${d.id?'Изделие':'Новое изделие'}</h2>
  <label class=field>Название<input id=ciName value="${esc(d.name)}" placeholder="Например: Скамья «Парк»" ${ro}></label>
  <label class=field>Примечание<input id=ciNote value="${esc(d.note)}" placeholder="металл + брус лиственницы" ${ro}></label>
- <div class=info><div class=label>Работы на 1 шт</div>${d.ops.map(o=>`<div class=edBlock><div class=edRow><input id="on_${o.id}" value="${esc(o.name)}" placeholder="Работа, например: сварка каркаса" aria-label="Работа" ${ro}>${own?`<button class=edDel aria-label="Убрать работу" onclick="readCatForm();catDraft.ops=catDraft.ops.filter(x=>x.id!=='${o.id}');renderCatItem()">×</button>`:''}</div><div class=edGrid2><label>Оплата<select id="ot_${o.id}" ${ro} onchange="readCatForm();renderCatItem()"><option value=piece ${o.pay_type==='piece'?'selected':''}>Сдельно</option><option value=day ${o.pay_type==='day'?'selected':''}>Посуточно</option></select></label><label ${!own&&o.pay_type==='piece'?'hidden':''}>${o.pay_type==='piece'?'₽ за 1 шт':'чел-дней на 1 шт'}<input id="ov_${o.id}" inputmode=decimal value="${o.pay_type==='piece'?(+o.rate?moneyText(o.rate):''):(+o.norm_days?num(o.norm_days):'')}" placeholder="0" ${ro}></label></div></div>`).join('')||'<div class=small>Работ нет</div>'}
+ <label class=field>Считается в<select id=ciUnit ${ro} onchange="readCatForm();renderCatItem()"><option value="шт" ${d.unit!=='м.п.'?'selected':''}>штуках</option><option value="м.п." ${d.unit==='м.п.'?'selected':''}>погонных метрах (забор, ограждение)</option></select></label>
+ <div class=info><div class=label>Работы на 1 ${esc(d.unit)}</div>${d.ops.map(o=>`<div class=edBlock><div class=edRow><input id="on_${o.id}" value="${esc(o.name)}" placeholder="Работа, например: сварка каркаса" aria-label="Работа" ${ro}>${own?`<button class=edDel aria-label="Убрать работу" onclick="readCatForm();catDraft.ops=catDraft.ops.filter(x=>x.id!=='${o.id}');renderCatItem()">×</button>`:''}</div><div class=edGrid2><label>Оплата<select id="ot_${o.id}" ${ro} onchange="readCatForm();renderCatItem()"><option value=piece ${o.pay_type==='piece'?'selected':''}>Сдельно</option><option value=day ${o.pay_type==='day'?'selected':''}>Посуточно</option></select></label><label ${!own&&o.pay_type==='piece'?'hidden':''}>${o.pay_type==='piece'?'₽ за 1 '+esc(d.unit):'чел-дней на 1 '+esc(d.unit)}<input id="ov_${o.id}" inputmode=decimal value="${o.pay_type==='piece'?(+o.rate?moneyText(o.rate):''):(+o.norm_days?num(o.norm_days):'')}" placeholder="0" ${ro}></label></div></div>`).join('')||'<div class=small>Работ нет</div>'}
  ${own?`<button class="btn secondary wide" onclick="readCatForm();catDraft.ops.push({id:uuid(),name:'',pay_type:'piece',rate:0,norm_days:0});renderCatItem()">+ Работа</button>`:''}
- ${own?`<div class=small style="margin-top:8px">На 1 шт: сдельно ${rub(pieceSum)} · посуточно ${num(daySum)} чел-дн</div>`:''}</div>
- <div class=info><div class=label>Материалы на 1 шт</div><datalist id=matNames>${MAT_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>${d.mats.map(m=>matEdHtml(m,own,ro)).join('')||'<div class=small>Материалов нет</div>'}
- ${own&&d.mats.length?(()=>{const c=itemMatCost(null,d.mats);return c.priced?`<div class=kvRow style="margin-top:6px"><span><b>Материалы по прайсу на 1 шт</b>${c.priced<c.total?` <span class=small>(${c.priced} из ${c.total})</span>`:''}</span><b id=matTotal>${rub(c.sum)}</b></div>`:''})():''}
+ ${own?`<div class=small style="margin-top:8px">На 1 ${esc(d.unit)}: сдельно ${rub(pieceSum)} · посуточно ${num(daySum)} чел-дн</div>`:''}</div>
+ <div class=info><div class=label>Материалы на 1 ${esc(d.unit)}</div><datalist id=matNames>${MAT_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>${d.mats.map(m=>matEdHtml(m,own,ro)).join('')||'<div class=small>Материалов нет</div>'}
+ ${own&&d.mats.length?(()=>{const c=itemMatCost(null,d.mats);return c.priced?`<div class=kvRow style="margin-top:6px"><span><b>Материалы по прайсу на 1 ${esc(d.unit)}</b>${c.priced<c.total?` <span class=small>(${c.priced} из ${c.total})</span>`:''}</span><b id=matTotal>${rub(c.sum)}</b></div>`:''})():''}
  ${own?`<div class=inlineRow><button class="btn secondary" onclick="readCatForm();catDraft.mats.push({id:uuid(),kind:'metal',shape:'linear',name:'',size:'',length_mm:null,qty:1,unit:'шт'});renderCatItem()">+ Материал</button>${priceItems.length?`<button class=btn onclick="pickMatFromPrice()">+ Из прайса</button>`:''}</div>`:''}
  <div class=small style="margin-top:8px">Погонаж (труба, уголок, брус): длина детали и сколько деталей на 1 изделие. Лист: ширина × длина детали — считается в м² + ${typeof wastePct==='function'?num(wastePct()):20}% обрезки и округляется до целых листов.</div></div>
  ${own?`<div class=actions><button class="btn secondary" onclick="${d.back?`detail('${d.back}')`:'openCatalog()'}">Назад</button><button class=btn id=ciSave onclick="saveCatItem()">Сохранить изделие</button></div>${d.id?`<button class=dangerLink onclick="archiveCatItem('${d.id}')">Убрать из справочника</button>`:''}`:''}`;
@@ -78,7 +80,7 @@ function matEdHtml(m,own,ro){
  else if(shape==='linear')g=`<div class=edGrid4>${p?'':`<label>${m.kind==='wood'?'Сечение':'Размер'}<input id="ms_${m.id}" value="${esc(m.size||'')}" placeholder="${m.kind==='wood'?'40×90':'40×20×2'}" ${ro}></label>`}<label>Длина, мм<input id="ml_${m.id}" inputmode=numeric value="${m.length_mm||''}" placeholder="мм" ${ro} ${rc}></label><label>Деталей на 1 шт<input id="mq_${m.id}" inputmode=decimal value="${num(m.qty||1)}" ${ro} ${rc}></label></div>`;
  else g=`<div class=edGrid4>${p?'':`<label>Размер<input id="ms_${m.id}" value="${esc(m.size||'')}" placeholder="—" ${ro}></label>`}<label>Кол-во на 1 шт<input id="mq_${m.id}" inputmode=decimal value="${num(m.qty||1)}" ${ro} ${rc}></label><label>Ед.<select id="mu_${m.id}" ${ro}>${[...new Set([m.unit||'шт',...UNITS])].map(u=>`<option ${m.unit===u?'selected':''}>${u}</option>`).join('')}</select></label></div>`;
  return `<div class=matEd><div class=edRow><select id="mk_${m.id}" aria-label="Вид" ${ro} ${ch}>${['metal','wood','other'].map(k=>`<option value=${k} ${m.kind===k?'selected':''}>${KIND_ICON[k]} ${KIND_NAME[k]}</option>`).join('')}</select>${m.kind==='metal'?`<select id="msh_${m.id}" aria-label="Форма" ${ro} ${ch} ${p?'disabled':''}><option value=linear ${shape==='linear'?'selected':''}>Погонаж</option><option value=sheet ${shape==='sheet'?'selected':''}>Лист</option><option value=piece ${shape==='piece'?'selected':''}>Штучно</option></select>`:''}${del}</div>
- ${m.kind==='wood'&&typeof woodSlots!=='undefined'&&woodSlots.length?`<div class=edRow><select id="mws_${m.id}" aria-label="Типоразмер дерева" ${ro} ${ch}><option value="">— своё дерево (вручную) —</option>${woodSlots.map(s=>`<option value="${s.id}" ${m.wood_slot_id===s.id?'selected':''}>${esc(s.name)} · порода — в объекте</option>`).join('')}</select></div>`:''}
+ ${m.kind==='wood'&&typeof woodSlots!=='undefined'&&woodSlots.length?`<div class=edRow><input type=hidden id="mws_${m.id}" value="${m.wood_slot_id||''}"><button type=button class=wheelBtn ${ro} onclick="pickSlotWheel('${m.id}')">${m.wood_slot_id&&woodSlot(m.wood_slot_id)?esc(woodSlot(m.wood_slot_id).name)+' · порода — в объекте':'Сечение: своё дерево (вручную)'}<i>▾</i></button></div>`:''}
  <div class=edRow ${wslot?'hidden':''}><input id="mn_${m.id}" list=matNames value="${esc(m.name)}" placeholder="${m.kind==='wood'?'Лиственница':m.kind==='metal'?(shape==='sheet'?'Лист 2,0 х/к':'Труба проф.'):'Болт М8×60'}" aria-label="Материал" ${ro} ${p?'readonly':''}>${own&&priceItems.length?`<button class="chip" type=button onclick="pickMatFromPrice('${m.id}')">${p?'Сменить':'Из прайса'}</button>`:''}</div>
  ${p?`<div class=small style="margin:2px 0 0">${priceUnitText(p)} · ${esc(priceSub(p))} · <button class=linkBtn style="padding:0" onclick="readCatForm();const x=catDraft.mats.find(x=>x.id==='${m.id}');x.price_item_id=null;renderCatItem()">отвязать от прайса</button></div>`:''}
  ${g}${c?`<div class=calcLine2 id="mc_${m.id}">${c.text} = <b>${rub(c.sum)}</b></div>`:''}${wslot&&own?`<div class=calcLine2>${woodSpecies.map(sp=>{const cc=matCost(m,sp.id);return cc?`${esc(sp.name)}: ${num((+m.length_mm||0)/1000*(+m.qty||0),3)} м × ${rub(woodPrice(m.wood_slot_id,sp.id).price)} = <b>${rub(cc.sum)}</b>`:`${esc(sp.name)}: цена не задана`}).join('<br>')}</div>`:''}</div>`;
@@ -101,8 +103,8 @@ async function saveCatItem(){
  try{
   const old=catOps.filter(x=>x.item_id===d.id);
   let id=d.id;
-  if(!id){const r=await q(sb.from('catalog_items').insert({workspace_id:currentWorkspace,name:d.name,note:d.note}).select().single());id=r.id}
-  else await q(sb.from('catalog_items').update({name:d.name,note:d.note}).eq('id',id));
+  if(!id){const r=await q(sb.from('catalog_items').insert({workspace_id:currentWorkspace,name:d.name,note:d.note,unit:d.unit||'шт'}).select().single());id=r.id}
+  else await q(sb.from('catalog_items').update({name:d.name,note:d.note,unit:d.unit||'шт'}).eq('id',id));
   const keepO=new Set(d.ops.map(o=>o.id)),keepM=new Set(d.mats.map(m=>m.id));
   for(const o of catOps.filter(x=>x.item_id===id&&!keepO.has(x.id)))await q(sb.from('catalog_ops').delete().eq('id',o.id));
   for(const m of catMats.filter(x=>x.item_id===id&&!keepM.has(x.id)))await q(sb.from('catalog_materials').delete().eq('id',m.id));
@@ -136,7 +138,7 @@ function specBoxHtml(pid){
  const planPiece=pieceOps.reduce((s,o)=>s+o.qty_plan*o.rate,0),planDays=dayOps.reduce((s,o)=>s+o.qty_plan*o.norm_days,0);
  const lab=own?projectLabor(pid):null,pp=parts.filter(p=>p.project_id===pid),toOrder=pp.filter(p=>p.status==='order').length,ready=pp.filter(p=>p.status==='ready').length;
  let h=`<div class=info id=specBox><div class=dHead><div class=label>Спецификация</div>${own?`<button class=chip onclick="openCatalog()">Справочник</button>`:''}</div>`;
- h+=lines.map(l=>{const item=catItems.find(i=>i.id===l.item_id);return `<div class=specLine><div><b>${esc(l.item_name)}</b>${item?'':'<div class=small>изделие убрано из справочника</div>'}</div>${own?`<input class=specQty inputmode=decimal value="${num(l.qty)}" aria-label="Количество ${esc(l.item_name)}" onchange="specQty('${l.id}',this)"><span class=small>шт</span><button class=edDel aria-label="Убрать из спецификации" onclick="specDelete('${l.id}')">×</button>`:`<b>${num(l.qty)} шт</b>`}</div>`}).join('')||`<div class=small>Изделий пока нет. Старое описание: «${esc(data.find(o=>o.id===pid)?.items||'—')}»</div>`;
+ h+=lines.map(l=>{const item=catItems.find(i=>i.id===l.item_id);return `<div class=specLine><div><b>${esc(l.item_name)}</b>${item?'':'<div class=small>изделие убрано из справочника</div>'}</div>${own?`<input class=specQty inputmode=decimal value="${num(l.qty)}" aria-label="Количество ${esc(l.item_name)}" onchange="specQty('${l.id}',this)"><span class=small>${esc(itemUnit(l.item_id))}</span><button class=edDel aria-label="Убрать из спецификации" onclick="specDelete('${l.id}')">×</button>`:`<b>${num(l.qty)} ${esc(itemUnit(l.item_id))}</b>`}</div>`}).join('')||`<div class=small>Изделий пока нет. Старое описание: «${esc(data.find(o=>o.id===pid)?.items||'—')}»</div>`;
  if(typeof speciesBoxHtml==='function')h+=speciesBoxHtml(pid);
  if(own)h+=`<button class="btn secondary wide" onclick="openSpecAdd('${pid}')">+ Изделие из справочника</button>`;
  if(ops.length){
@@ -153,12 +155,12 @@ function specBoxHtml(pid){
 function openSpecAdd(pid,preselect){
  const items=catItems.filter(i=>!i.archived);
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Изделие в спецификацию</h2><div class=summary>${esc(projName(pid))}</div>
- ${items.length?`<label class=field>Изделие<select id=saItem>${items.map(i=>`<option value="${i.id}" ${i.id===preselect?'selected':''}>${esc(i.name)}</option>`).join('')}</select></label><label class=field>Количество, шт<input id=saQty inputmode=decimal value="1"></label>`:'<div class=empty>В справочнике пока нет изделий</div>'}
+ ${items.length?`<label class=field>Изделие<select id=saItem>${items.map(i=>`<option value="${i.id}" ${i.id===preselect?'selected':''}>${esc(i.name)}</option>`).join('')}</select></label><label class=field><span id=saUnitL>Количество, ${esc(itemUnit(preselect||items[0]?.id))}</span><input id=saQty inputmode=decimal value="1"></label>`:'<div class=empty>В справочнике пока нет изделий</div>'}
  <button class="btn secondary wide" onclick="openCatItem(null,'${pid}')">+ Новое изделие в справочник</button>
  <div class=actions><button class="btn secondary" onclick="detail('${pid}')">Назад</button>${items.length?`<button class=btn id=saSave>Добавить</button>`:''}</div>`;
- openModal();
+ openModal();if($('saItem'))$('saItem').onchange=e=>{$('saUnitL').textContent='Количество, '+itemUnit(e.target.value)};
  if($('saSave'))$('saSave').onclick=async()=>{const b=$('saSave');if(b.disabled)return;const it=catItems.find(i=>i.id===$('saItem').value),n=qtyVal($('saQty').value);if(!it)return;if(!n)return alert('Укажите количество');b.disabled=true;b.textContent='Сохраняю…';
-  try{await q(sb.from('spec_lines').insert({workspace_id:currentWorkspace,project_id:pid,item_id:it.id,item_name:it.name,qty:n,sort:specLines.filter(l=>l.project_id===pid).length}));await loadProd();await syncProject(pid);toast(it.name+' · '+num(n)+' шт добавлено');detail(pid)}catch(e){b.disabled=false;b.textContent='Добавить';serverError(e);alert('Не удалось: '+(e.message||e))}};
+  try{await q(sb.from('spec_lines').insert({workspace_id:currentWorkspace,project_id:pid,item_id:it.id,item_name:it.name,qty:n,sort:specLines.filter(l=>l.project_id===pid).length}));await loadProd();await syncProject(pid);toast(it.name+' · '+num(n)+' '+(it.unit||'шт')+' добавлено');detail(pid)}catch(e){b.disabled=false;b.textContent='Добавить';serverError(e);alert('Не удалось: '+(e.message||e))}};
 }
 async function specQty(lineId,el){const l=specLines.find(x=>x.id===lineId);if(!l)return;const n=qtyVal(el.value);if(!n){el.value=num(l.qty);return alert('Количество должно быть больше нуля. Чтобы убрать изделие — нажмите ×')}
  const done=projOps.filter(o=>o.spec_line_id===lineId&&o.pay_type==='piece').map(o=>opDone(o.id)).reduce((a,b)=>Math.max(a,b),0);
@@ -231,11 +233,11 @@ async function partNext(id){
  catch(e){p.status=prev;renderCurrent();failSave(e)}
 }
 function openPart(id){
- const p=parts.find(x=>x.id===id)||{kind:shopKind,name:'',size:'',length_mm:null,qty:1,unit:'шт',status:'order',project_id:shopFilter||activeProjects()[0]?.id,note:''};
- const projs=activeProjects();if(!projs.length)return alert('Нет объектов в работе');
+ const p=parts.find(x=>x.id===id)||{kind:['metal','wood','other'].includes(shopKind)?shopKind:'other',name:'',size:'',length_mm:null,qty:1,unit:'шт',status:'order',project_id:shopKind==='shop'?null:(shopFilter||activeProjects()[0]?.id||null),note:''};
+ const projs=activeProjects();
  const canDel=p.id&&(isOwner()||p.created_by===currentUser?.id);
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>${p.id?'Деталь':'Новая деталь'}</h2>${p.source==='auto'?'<div class=small>Деталь из спецификации: размеры и количество меняются в справочнике изделия или в количестве изделий.</div>':''}
- <label class=field>Объект<select id=ppProj ${p.source==='auto'?'disabled':''}>${projs.map(o=>`<option value="${o.id}" ${o.id===p.project_id?'selected':''}>${esc(o.name)}</option>`).join('')}</select></label>
+ <label class=field>Объект<select id=ppProj ${p.source==='auto'?'disabled':''}><option value="" ${!p.project_id?'selected':''}>Внутрицеховые (без объекта)</option>${projs.map(o=>`<option value="${o.id}" ${o.id===p.project_id?'selected':''}>${esc(o.name)}</option>`).join('')}</select></label>
  <label class=field>Вид<select id=ppKind ${p.source==='auto'?'disabled':''}>${['wood','metal','other'].map(k=>`<option value=${k} ${p.kind===k?'selected':''}>${KIND_ICON[k]} ${KIND_NAME[k]}</option>`).join('')}</select></label>
  <datalist id=matNames2>${MAT_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>
  <label class=field>Материал<input id=ppName list=matNames2 value="${esc(p.name)}" placeholder="Лиственница / Труба проф. / Болт" ${p.source==='auto'?'disabled':''}></label>
@@ -253,10 +255,10 @@ function openPart(id){
  if($('ppName')&&!p.id)$('ppName').oninput=e=>{const v=e.target.value,k=WOOD.test(v)?'wood':METAL.test(v)?'metal':/болт|гайк|саморез|анкер|краск|грунт|эмаль|шайб/i.test(v)?'other':'';if(k&&$('ppKind').value!==k){$('ppKind').value=k;$('ppKind').dispatchEvent(new Event('change'))}};
  $('ppSave').onclick=async()=>{const b=$('ppSave');if(b.disabled)return;
   const body={status:$('ppStatus').value,supplier:$('ppSup').value.trim(),updated_at:new Date().toISOString()};
-  if(p.source!=='auto'){Object.assign(body,{project_id:$('ppProj').value,kind:$('ppKind').value,name:$('ppName').value.trim(),size:$('ppSize').value.trim(),length_mm:Math.round(qtyVal($('ppLen').value))||null,qty:qtyVal($('ppQty').value),unit:$('ppUnit').value,note:$('ppNote').value.trim()});body.size=sizeShow(body.size);body.shape=body.kind==='other'?'piece':$('ppShape').value;if(body.shape==='sheet'){body.width_mm=Math.round(qtyVal($('ppW').value))||null;const sd=($('ppSheet').value.match(/\d+/g)||[]).map(Number);body.sheet_w=sd[0]||1250;body.sheet_l=sd[1]||2500;if(!body.width_mm||!body.length_mm)return alert('Для листовой детали укажите ширину и длину в мм')}if(body.shape==='piece')body.length_mm=null;if(!body.name)return alert('Укажите материал');if(!body.qty)return alert('Укажите количество');if(body.kind==='other')body.length_mm=null}
+  if(p.source!=='auto'){Object.assign(body,{project_id:$('ppProj').value||null,kind:$('ppKind').value,name:$('ppName').value.trim(),size:$('ppSize').value.trim(),length_mm:Math.round(qtyVal($('ppLen').value))||null,qty:qtyVal($('ppQty').value),unit:$('ppUnit').value,note:$('ppNote').value.trim()});body.size=sizeShow(body.size);body.shape=body.kind==='other'?'piece':$('ppShape').value;if(body.shape==='sheet'){body.width_mm=Math.round(qtyVal($('ppW').value))||null;const sd=($('ppSheet').value.match(/\d+/g)||[]).map(Number);body.sheet_w=sd[0]||1250;body.sheet_l=sd[1]||2500;if(!body.width_mm||!body.length_mm)return alert('Для листовой детали укажите ширину и длину в мм')}if(body.shape==='piece')body.length_mm=null;if(!body.name)return alert('Укажите материал');if(!body.qty)return alert('Укажите количество');if(body.kind==='other')body.length_mm=null}
   if(body.status==='ordered'&&!p.ordered_on)body.ordered_on=localISO();
   b.disabled=true;b.textContent='Сохраняю…';
-  try{if(p.id)await q(sb.from('shop_parts').update(body).eq('id',p.id));else await q(sb.from('shop_parts').insert({...body,workspace_id:currentWorkspace,source:'manual',created_by:currentUser.id}));shopKind=body.kind||shopKind;await loadProd();closeModal();renderCurrent();toast('Деталь сохранена')}
+  try{if(p.id)await q(sb.from('shop_parts').update(body).eq('id',p.id));else await q(sb.from('shop_parts').insert({...body,workspace_id:currentWorkspace,source:'manual',created_by:currentUser.id}));if(shopKind!=='shop')shopKind=body.kind==='other'?'metal':body.kind||shopKind;await loadProd();closeModal();renderCurrent();toast('Деталь сохранена')}
   catch(e){b.disabled=false;b.textContent='Сохранить';serverError(e);alert('Не удалось: '+(e.message||e))}};
 }
 async function deletePart(id){if(!confirm('Удалить деталь?'))return;try{await q(sb.from('shop_parts').delete().eq('id',id));await loadProd();closeModal();renderCurrent()}catch(e){alert('Не удалось удалить: '+(e.message||e))}}
@@ -265,13 +267,13 @@ async function deletePart(id){if(!confirm('Удалить деталь?'))return
 function sectionArea(size){const n=normSize(size).split('×').map(Number).filter(x=>x>0);return n.length>=2?n[0]*n[1]/1e6:0}
 function supplyGroups(){
  const ids=new Set(activeProjects().map(o=>o.id)),g=new Map(),own=isOwner();
- for(const p of parts){if(!ids.has(p.project_id))continue;
+ const tdy=localISO();for(const p of parts){if(p.project_id?!ids.has(p.project_id):p.status==='stock'&&p.arrived_on!==tdy||p.status==='ready')continue;
   const sh=p.shape==='sheet',lin=!sh&&p.kind!=='other'&&p.shape!=='piece'&&p.length_mm;
   const key=sh?['sheet',p.price_item_id||p.name.trim().toLowerCase(),p.sheet_w||0,p.sheet_l||0].join('|'):[p.kind,p.price_item_id||p.name.trim().toLowerCase(),p.price_item_id?'':normSize(p.size),lin?'m':p.unit].join('|');
-  let x=g.get(key);if(!x){x={key,kind:p.kind,name:capFirst(p.name.trim()),size:sizeShow(p.size),unit:sh?'м²':lin?'м':(p.unit||'шт'),linear:!!lin,sheet:sh,sheetW:+p.sheet_w||0,sheetL:+p.sheet_l||0,need:0,have:0,ordered:0,order:0,bars:0,vol:0,parts:[],suppliers:new Set(),byLen:{},longM:0,orderedOn:'',price:own?((typeof priceById==='function'&&priceById(p.price_item_id))||(typeof woodPartPrice==='function'&&woodPartPrice(p))||null):null};g.set(key,x)}
+  let x=g.get(key);if(!x){x={key,kind:p.kind,name:capFirst(p.name.trim()),size:sizeShow(p.size),unit:sh?'м²':lin?'м':(p.unit||'шт'),linear:!!lin,sheet:sh,sheetW:+p.sheet_w||0,sheetL:+p.sheet_l||0,need:0,have:0,ordered:0,order:0,arrived:0,bars:0,vol:0,parts:[],suppliers:new Set(),byLen:{},longM:0,orderedOn:'',price:own?((typeof priceById==='function'&&priceById(p.price_item_id))||(typeof woodPartPrice==='function'&&woodPartPrice(p))||null):null};g.set(key,x)}
   const v=sh?partArea(p):lin?partMeters(p):(+p.qty||0);x.need+=v;x.parts.push(p);
   if(p.status==='order'){x.order+=v;if(lin&&p.kind==='metal'){const st=p.stock_len_mm||6000;if(p.length_mm>st)x.longM+=partMeters(p);else{const k=p.length_mm+'|'+st;x.byLen[k]=(x.byLen[k]||0)+(+p.qty||0)}}if(p.kind==='wood')x.vol+=partMeters(p)*sectionArea(p.size)}
-  else if(p.status==='ordered'){x.ordered+=v;if(p.supplier)x.suppliers.add(p.supplier);if(p.ordered_on&&(!x.orderedOn||p.ordered_on<x.orderedOn))x.orderedOn=p.ordered_on}else x.have+=v;
+  else if(p.status==='ordered'){x.ordered+=v;if(p.supplier)x.suppliers.add(p.supplier);if(p.ordered_on&&(!x.orderedOn||p.ordered_on<x.orderedOn))x.orderedOn=p.ordered_on}else{x.have+=v;if(p.status==='stock'&&p.arrived_on===tdy)x.arrived+=v}
  }
  const w=typeof wastePct==='function'?wastePct():20;
  for(const x of g.values()){
@@ -312,7 +314,7 @@ function openSupplyGroup(key){
    const rows=[...by.entries()].map(([pid,a])=>({workspace_id:currentWorkspace,project_id:pid,category:'materials',amount:Math.round(a*100)/100,spent_on:localISO(),method:'bank',note:`${x.name} ${x.size}`.trim(),source:'supply',created_by:currentUser.id})).filter(r=>r.amount);
    const diff=Math.round((sum-rows.reduce((s,r)=>s+r.amount,0))*100)/100;if(rows.length&&diff)rows[rows.length-1].amount=Math.round((rows[rows.length-1].amount+diff)*100)/100;
    try{await q(sb.from('project_expenses').insert(rows))}catch(err){return failSave(err)}}
-  set('ordered','stock',{},e.target)};
+  set('ordered','stock',{arrived_on:localISO()},e.target)};
 }
 function openSupplyText(){
  const t=supplyText(supplyGroups());

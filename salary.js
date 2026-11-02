@@ -51,10 +51,10 @@ function renderSalary(){
  if(!salWeek)salWeek=mondayOf(localISO());
  const ws=salWeek,closed=weekClosed(ws);
  let h=`<div class=weekNav><button class=chip onclick="salWeek=addDays(salWeek,-7);renderSalary()" aria-label="Прошлая неделя">‹</button><b>${weekLabel(ws)}${closed?' · закрыта 🔒':''}</b><button class=chip onclick="salWeek=addDays(salWeek,7);renderSalary()" aria-label="Следующая неделя">›</button></div>
- <div class=segBar><button class="${salTab==='grid'?'on':''}" onclick="salTab='grid';renderSalary()">Табель</button><button class="${salTab==='pay'?'on':''}" onclick="salTab='pay';renderSalary()">Выдачи</button><button class="${salTab==='sum'?'on':''}" onclick="salTab='sum';renderSalary()">Итог</button></div>`;
+ <div class=segBar><button class="${salTab==='grid'?'on':''}" onclick="salTab='grid';renderSalary()">Табель</button><button class="${salTab==='pay'?'on':''}" onclick="salTab='pay';renderSalary()">Выдачи</button><button class="${salTab==='sum'?'on':''}" onclick="salTab='sum';renderSalary()">Итог</button><button class="${salTab==='rates'?'on':''}" onclick="salTab='rates';renderSalary()">Расценки</button></div>`;
  if(salaryError)h+=`<div class=empty>Зарплата не загрузилась: ${esc(salaryError)}</div>`;
  else if(!workers.length)h+=`<div class=empty>Добавьте сотрудников: имя, посуточно или сдельно, ставка за день и за час переработки.<br><button class=btn style="margin-top:10px" onclick="openWorker()">+ Сотрудник</button></div>`;
- else h+=salTab==='grid'?gridHtml(ws,closed):salTab==='pay'?payHtml(ws,closed):sumHtml(ws,closed);
+ else h+=salTab==='rates'?(typeof ratesHtml==='function'?ratesHtml():''):salTab==='grid'?gridHtml(ws,closed):salTab==='pay'?payHtml(ws,closed):sumHtml(ws,closed);
  h+=`<button class=linkBtn onclick="openWorkers()">Сотрудники и ставки →</button>`;
  $('analyticsBody').innerHTML=h;
  bindLongPress();
@@ -63,12 +63,14 @@ function cellHtml(w,d,closed){
  const ds=tdays.filter(t=>t.worker_id===w.id&&t.work_date===d),ps=pieces.filter(p=>p.worker_id===w.id&&p.work_date===d);
  const mark=ds.reduce((s,t)=>s+(+t.mark||0),0),ot=ds.some(t=>+t.ot_hours>0),pr=ps.reduce((s,p)=>s+(+p.amount||0),0);
  let cls='x',txt='–';
- if(w.pay_type==='piece'&&ps.length&&!mark){cls='m';txt=pr>=100000?Math.round(pr/1000)+'к':String(Math.round(pr))}
- else if(w.pay_type==='piece'&&pr){cls='m';txt=pr>=100000?Math.round(pr/1000)+'к':String(Math.round(pr))}
+ const pq=ps.filter(p=>p.kind!=='other').reduce((s,p)=>s+(+p.qty||0),0),ks=v=>v>=100000?Math.round(v/1000)+'к':v>=10000?num(v/1000,1)+'к':String(Math.round(v));
+ if(w.pay_type==='piece'&&ps.length&&!mark){cls='m pc';txt=pq?`${num(pq,1)} шт<small>${ks(pr)}</small>`:ks(pr)}
+ else if(w.pay_type==='piece'&&pr){cls='m pc';txt=pq?`${num(pq,1)} шт<small>${ks(pr)}</small>`:ks(pr)}
+ else if(w.pay_type==='piece'&&!mark&&!ps.length){cls='x pc0';txt='+'}
  else if(mark){cls=mark>=1?'f':'h';txt=ds.length>1?'½+½':mark>=1?(mark>1?num(mark,1):'1'):'½';if(ds.length>1)cls+=' two';if(pr)cls+=' plus'}
  else if(pr){cls='m';txt=String(Math.round(pr))}
  else if(ps.length){cls='m';txt='0₽'}
- return `<td><button class="tc ${cls}${d===localISO()?' today':''}" data-w="${w.id}" data-d="${d}" onclick="cellTap('${w.id}','${d}')" aria-label="${esc(w.name)}, ${shortDate(d)}: ${txt}">${txt}${ot?'<i class=otDot></i>':''}</button></td>`;
+ return `<td><button class="tc ${cls}${d===localISO()?' today':''}" data-w="${w.id}" data-d="${d}" onclick="cellTap('${w.id}','${d}')" aria-label="${esc(w.name)}, ${shortDate(d)}: ${String(txt).replace(/<[^>]+>/g,' ')}">${txt}${ot?'<i class=otDot></i>':''}</button></td>`;
 }
 function gridHtml(ws,closed){
  const dates=weekDates(ws),rows=workers.filter(w=>w.active||tdays.some(t=>t.worker_id===w.id&&t.work_date>=ws&&t.work_date<=dates[6])||pieces.some(p=>p.worker_id===w.id&&p.work_date>=ws&&p.work_date<=dates[6]));
@@ -76,7 +78,7 @@ function gridHtml(ws,closed){
  return `<div class=tgWrap><table class=tg><thead><tr><th></th>${dates.map((d,i)=>`<th><button class="dayH${isWeekend(d)?' we':''}" onclick="markAllDay('${d}')" aria-label="Все посуточные были ${shortDate(d)}">${DOW[i]}<small>${parseDate(d).getDate()}</small></button></th>`).join('')}<th class=tgTot>₽</th></tr></thead><tbody>
  ${rows.map(w=>{const a=accrual(w.id,ws,dates[6]);return `<tr><td class=tgName><button onclick="openWorker('${w.id}')">${esc(w.name)}<small>${w.pay_type==='piece'?'сдельно':num(w.day_rate,0)+'/д'}</small></button></td>${dates.map(d=>cellHtml(w,d,closed)).join('')}<td class=tgTot><b>${num(Math.round(accTotal(a)),0)}</b><small>${w.pay_type==='piece'?a.pieceN+' раб.':num(a.days,1)+' дн'+(a.ot?' +'+num(a.ot,1)+'ч':'')}</small></td></tr>`}).join('')}
  </tbody></table></div>
- <div class=small style="margin:6px 2px">Тап по клетке: 1 → ½ → –. Долгий тап — объект, переработка, второй объект. Тап по дню — «все были». Сдельщику тап — внести работу.</div>
+ <div class=small style="margin:6px 2px">Посуточным: тап по клетке 1 → ½ → –, долгий тап — объект и переработка, тап по дню — «все были». Сдельщикам (фиолетовые клетки): тап — объект → изделие → сколько штук. Отметки мастера в Цехе попадают сюда сами.</div>
  <div class=info>${Math.abs(prev)>0.004?`<div class=kvRow><span>С прошлых недель</span><b>${prev>0?'+':''}${rub(prev)}</b></div>`:''}<div class=kvRow><span>Начислено (с премиями и штрафами)</span><b>+${rub(acc)}</b></div><div class=kvRow><span>Выдано</span><b>−${rub(paid)}</b></div><div class=kvRow><span><b>К выдаче</b></span><b class=pos>${rub(toPay)}</b></div>${over<-0.004?`<div class=kvRow><span>Переплата (перейдёт дальше)</span><b class=neg>−${rub(-over)}</b></div>`:''}${closed?'<div class=small>Неделя закрыта — правки только корректировкой в следующей неделе</div>':''}</div>`;
 }
 // долгий тап
@@ -168,7 +170,7 @@ function openPiece(wid,d,keep){
   ${mode==='plan'?`<label class=field>Работа<select id=pcOp>${ops.map(o=>{const left=Math.max(0,o.qty_plan-opDone(o.id));return `<option value="${o.id}" ${keep?.opId===o.id?'selected':''}>${esc(o.item_name)} — ${esc(o.name)} · осталось ${num(left)} из ${num(o.qty_plan)} · ${rub(o.rate)}/шт</option>`}).join('')}</select></label>
    <div class=label>Сколько штук</div><div class=qtyRow><input id=pcQty inputmode=decimal value="1" aria-label="Количество штук"><button type=button class=chip id=pcHalf>0,5</button><button type=button class=chip id=pcAll></button></div>
    <div class=label style="margin-top:10px">Вид</div><div class=chipRow id=pcKind>${['work','redo_paid','redo_free'].map(k=>`<button type=button class="chip ${kind===k?'on':''}" data-k=${k}>${KIND[k]}</button>`).join('')}</div>`
-  :`<label class=field>Что сделал<input id=pcTitle placeholder="например: зачистка сварных швов"></label><label class=field>Сумма, ₽<input id=pcAmt inputmode=decimal autocomplete=off></label>`}
+  :`${(typeof workRates!=='undefined'?workRates.filter(r=>r.kind==='other'):[]).length?`<div class=chipRow id=pcRates>${workRates.filter(r=>r.kind==='other').map((r,i)=>`<button type=button class=chip data-i=${i}>${esc(r.name)} · ${rub(r.rate)}</button>`).join('')}</div>`:''}<label class=field>Что сделал<input id=pcTitle placeholder="например: зачистка сварных швов"></label><label class=field>Сумма, ₽<input id=pcAmt inputmode=decimal autocomplete=off></label>`}
   ${others.length?`<label class=field>Кто делал<select id=pcPartner><option value="">${esc(w.name)} один</option>${others.map(x=>`<option value="${x.id}">${esc(w.name)} + ${esc(x.name)}</option>`).join('')}</select></label><div id=pcShareBox hidden class=inlineRow><label class=field>Доля ${esc(w.name)}, %<input id=pcShare inputmode=numeric value=50></label></div>`:''}
   <div class=calcLine id=pcCalc></div>
   <div class=actions><button class="btn secondary" onclick=closeModal()>Закрыть</button><button class=btn id=pcSave>Добавить</button></div>`;
@@ -176,7 +178,7 @@ function openPiece(wid,d,keep){
    if($('pcPartner')?.value){const sh=Math.min(100,Math.max(0,+$('pcShare').value||0));t+=` · ${esc(w.name)} ${sh}% / ${esc(wName($('pcPartner').value))} ${100-sh}%`}$('pcCalc').innerHTML=t};
   $('pcBody').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{mode=b.dataset.m;draw()});
   if(mode==='plan'){$('pcOp').onchange=calc;$('pcQty').oninput=calc;$('pcHalf').onclick=()=>{$('pcQty').value='0,5';calc()};$('pcAll').onclick=()=>{const o=projOps.find(x=>x.id===$('pcOp').value);$('pcQty').value=num(Math.max(0,o.qty_plan-opDone(o.id)));calc()};$('pcKind').onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;kind=b.dataset.k;[...$('pcKind').children].forEach(x=>x.classList.toggle('on',x===b));calc()}}
-  else $('pcAmt').oninput=e=>{fmtMoneyInput(e.target);calc()};
+  else{$('pcAmt').oninput=e=>{fmtMoneyInput(e.target);calc()};if($('pcRates'))$('pcRates').onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;const r=workRates.filter(r=>r.kind==='other')[+b.dataset.i];$('pcTitle').value=r.name;$('pcAmt').value=moneyText(r.rate);calc()}}
   if($('pcPartner')){$('pcPartner').onchange=()=>{$('pcShareBox').hidden=!$('pcPartner').value;calc()};$('pcShare').oninput=calc}
   calc();
   $('pcSave').onclick=async()=>{const b=$('pcSave');if(b.disabled)return;
@@ -293,6 +295,7 @@ function openWorker(id){
  <div class=small>Сдельщику тоже можно отметить день посуточно, а посуточному — внести сдельную работу.</div>
  <div class=inlineRow><label class=field>Ставка за день, ₽<input id=wkDay inputmode=decimal value="${moneyText(w.day_rate)}"></label><label class=field>За час переработки, ₽<input id=wkOt inputmode=decimal value="${moneyText(w.ot_rate)}"></label></div>
  <label class=field>Ставка за выходной день, ₽ (если другая)<input id=wkWe inputmode=decimal value="${w.weekend_rate?moneyText(w.weekend_rate):''}" placeholder="как в будни"></label>
+ <label class=field>Аккаунт в приложении (увидит свою зарплату в «Цех → Моя работа»)<select id=wkUser><option value="">— не привязан —</option>${members.filter(m=>m.role!=='owner'||m.user_id===w.user_id).map(m=>`<option value="${m.user_id}" ${w.user_id===m.user_id?'selected':''}>${esc(m.display_name||m.email||'Сотрудник')}${m.email?' · '+esc(m.email):''}</option>`).join('')}</select></label>
  ${id?'<div class=small>Новая ставка — только для новых отметок. Прошлые недели не пересчитываются.</div>':''}
  ${id?`<label class=check2><input type=checkbox id=wkActive ${w.active?'checked':''}> Работает (снимите — уйдёт в архив, долги сохранятся)</label>`:''}
  <div class=actions><button class="btn secondary" onclick="openWorkers()">Назад</button><button class=btn id=wkSave>Сохранить</button></div>
@@ -301,7 +304,7 @@ function openWorker(id){
  ['wkDay','wkOt','wkWe'].forEach(k=>$(k).oninput=e=>fmtMoneyInput(e.target));
  $('wkType').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;type=b.dataset.v;[...$('wkType').children].forEach(x=>x.classList.toggle('on',x===b))};
  $('wkSave').onclick=async()=>{const b=$('wkSave');if(b.disabled)return;const name=$('wkName').value.trim();if(!name)return alert('Укажите имя');
-  const body={name,pay_type:type,day_rate:moneyVal($('wkDay').value),ot_rate:moneyVal($('wkOt').value),weekend_rate:$('wkWe').value.trim()?moneyVal($('wkWe').value):null,active:id?$('wkActive').checked:true};
+  const body={name,pay_type:type,day_rate:moneyVal($('wkDay').value),ot_rate:moneyVal($('wkOt').value),weekend_rate:$('wkWe').value.trim()?moneyVal($('wkWe').value):null,active:id?$('wkActive').checked:true,user_id:$('wkUser').value||null};if(body.user_id&&workers.some(x=>x.id!==id&&x.user_id===body.user_id))return alert('Этот аккаунт уже привязан к другому сотруднику');
   if(type==='day'&&!body.day_rate&&!confirm('Ставка за день не указана. Сохранить с нулём?'))return;
   b.disabled=true;try{if(id)await q(sb.from('workers').update(body).eq('id',id));else await q(sb.from('workers').insert({...body,workspace_id:currentWorkspace,sort:workers.length}));await loadSalary();renderCurrent();openWorkers();toast('Сохранено')}catch(e){b.disabled=false;salErr(e)}};
 }
