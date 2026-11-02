@@ -566,3 +566,15 @@ span.st{min-height:0;padding:4px 8px;min-width:0}
 .wkPick button.sel{border-color:var(--green);background:#eef8ef;color:#2e7d32}
 .inWheel{position:relative;height:144px;margin:4px 0}.inWheel .woodWheelCenter{top:54px}.inWheel .woodWheelTrack{height:144px;padding:54px 0}
 .qChips{display:flex;gap:6px;margin-top:6px}.qChips button{flex:1;border:0;border-radius:9px;background:#e8efea;color:var(--primary);padding:9px 0;font:inherit;font-weight:800;cursor:pointer}.qChips button.on{background:var(--primary);color:#fff}
+/* v53: метки только у пустых полей */
+.field.fReq,.field.fWant,.moneyRow .fReq{border-left:4px solid transparent;padding-left:8px;border-radius:4px;transition:border-color .2s}
+.field.fReq.fEmpty,.moneyRow .fReq.fEmpty{border-left-color:var(--red)}
+.field.fWant.fEmpty{border-left-color:#f4b400}
+.field.fReq:not(.fEmpty),.moneyRow .fReq:not(.fEmpty){color:inherit}
+/* значки материалов */
+.kI{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;font-size:14px;flex:none;margin-right:8px;vertical-align:middle;font-style:normal}
+.kI.metal{background:#e3ecf7}.kI.wood{background:#f6ead9}.kI.other{background:#eceff2}.kI.paint{background:#f3e6f6}
+.kB.metal{border-left:4px solid #5b84b8!important}.kB.wood{border-left:4px solid #b9844a!important}.kB.other{border-left:4px solid #9aa6b0!important}.kB.paint{border-left:4px solid #a15fbf!important}
+.sectionTitle .kI{margin-right:6px}
+.ohRow{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;background:#fff;border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin:5px 0;font:inherit;font-size:14px;cursor:pointer;text-align:left}
+.ohRow b{white-space:nowrap}

@@ -222,7 +222,7 @@ function renderShop(){
  h+=`<button class="btn wide" style="margin-top:12px" onclick="openPart()">+ Деталь вручную</button>`;
  $('woodBody').innerHTML=h;
 }
-function partRowHtml(p){return `<div class=partRow><button class=partMain onclick="openPart('${p.id}')"><b>${p.note&&p.source==='auto'?esc(p.note)+' — ':''}${esc(p.name)} ${esc(p.size||'')}</b><span>${partLine(p)}${barHint(p)}${p.source!=='auto'&&p.note?' · '+esc(p.note):''}${p.status==='ordered'&&p.supplier?' · '+esc(p.supplier):''}</span></button><button class="st st_${p.status}" onclick="partNext('${p.id}')" aria-label="Статус: ${PART_LABEL[p.status]}, нажмите для следующего">${PART_LABEL[p.status]}</button></div>`}
+function partRowHtml(p){const kk=typeof kKey==='function'?kKey(p):p.kind;return `<div class="partRow kB ${kk}"><button class=partMain onclick="openPart('${p.id}')"><b>${typeof kIcon==='function'?kIcon(kk):''}${p.note&&p.source==='auto'?esc(p.note)+' — ':''}${esc(p.name)} ${esc(p.size||'')}</b><span>${partLine(p)}${barHint(p)}${p.source!=='auto'&&p.note?' · '+esc(p.note):''}${p.status==='ordered'&&p.supplier?' · '+esc(p.supplier):''}</span></button><button class="st st_${p.status}" onclick="partNext('${p.id}')" aria-label="Статус: ${PART_LABEL[p.status]}, нажмите для следующего">${PART_LABEL[p.status]}</button></div>`}
 const partBusy={};// защита от двойного тапа
 async function partNext(id){
  const p=parts.find(x=>x.id===id);if(!p)return;if(partBusy[id]&&Date.now()-partBusy[id]<600)return;partBusy[id]=Date.now();

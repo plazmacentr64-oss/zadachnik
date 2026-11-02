@@ -25,7 +25,7 @@ function lineUnitCost(l){
 function ecoPlan(pid){
  const lines=specLines.filter(l=>l.project_id===pid),plan=finPlans.get(pid)||{};
  let metal=0,other=0,labor=0,unpriced=0;lines.forEach(l=>{const c=lineUnitCost(l),q=+l.qty||0;metal+=c.metal*q;other+=c.other*q;labor+=c.labor*q;unpriced+=c.unpriced});
- const materials=metal+other,delivery=+plan.delivery||0,sub=+plan.sub||0,oth=+plan.other||0,overhead=(materials+labor)*overheadPct()/100;
+ const materials=metal+other,delivery=+plan.delivery||0,sub=+plan.sub||0,oth=+plan.other||0,overhead=typeof ohRate==='function'&&ohRate()!=null?(+data.find(o=>o.id===pid)?.money||0)*ohRate():(materials+labor)*overheadPct()/100;
  return {metal,other,materials,labor,delivery,sub,oth,overhead,total:materials+labor+delivery+sub+oth+overhead,unpriced,lines:lines.length};
 }
 function ecoFact(pid){
@@ -38,7 +38,7 @@ function ecoHtml(pid){
  if(!isOwner())return '';
  const o=data.find(x=>x.id===pid);if(!o)return '';
  const P=ecoPlan(pid),F=ecoFact(pid),done=o.status==='Выполнено';
- const rows=[['materials','Материалы'],['labor','Труд (табель)'],['delivery','Доставка / транспорт'],['sub','Субподряд и покраска'],['oth','Прочее'],['overhead',`Накладные цеха ${num(overheadPct())}%`]];
+ const rows=[['materials','Материалы'],['labor','Труд (табель)'],['delivery','Доставка / транспорт'],['sub','Субподряд и покраска'],['oth','Прочее'],['overhead',typeof ohRate==='function'&&ohRate()!=null?`Накладные цеха ${num(ohRate()*100,1)}% от договора`:`Накладные цеха ${num(overheadPct())}%`]];
  const fc=k=>done?F[k]:Math.max(P[k],F[k]),forecast=rows.reduce((s,[k])=>s+fc(k),0);
  const mPlan=o.money-P.total,mFc=o.money-forecast,pct=v=>o.money?num(v/o.money*100,1)+'%':'—';
  const over=rows.filter(([k])=>k!=='overhead'&&F[k]>P[k]+0.5&&P[k]>0).map(([k,l])=>`${l}: дороже плана на ${rub(F[k]-P[k])}`);
@@ -50,8 +50,8 @@ function ecoHtml(pid){
  <div class=ecoGrid><span class=eh>Статья</span><span class=eh>План</span><span class=eh>Факт</span>
  ${rows.map(([k,l])=>`<span>${l}${k==='materials'&&(P.metal||P.other)?`<small>металл ${num(Math.round(P.metal),0)} · прочее ${num(Math.round(P.other),0)}</small>`:''}</span><span>${num(Math.round(P[k]),0)}</span><span class="${F[k]>P[k]+0.5&&P[k]>0?'neg':''}">${num(Math.round(F[k]),0)}</span>`).join('')}
  <span class=et>Себестоимость</span><span class=et>${num(Math.round(P.total),0)}</span><span class=et>${num(Math.round(F.total),0)}</span></div>
- ${!(P.total>0)&&!(F.total>0)?`<div class=noData>Маржа: <b>нет данных</b> — заполните спецификацию или внесите расходы, чтобы посчитать себестоимость</div>`:`<div class=mBig><div><small>Маржа по плану</small>${P.total>0?`<b class="${mPlan<0?'neg':''}">${rub(mPlan)}</b><small>${pct(mPlan)} от договора</small>`:`<b class=muted>нет данных</b><small>нет плана себестоимости</small>`}</div><div style="text-align:right"><small>${done?'Итог по факту':'Прогноз на сдачу'}</small><b class="${P.total>0&&mFc<mPlan-0.5?'warnC':''} ${mFc<0?'neg':''}">${rub(mFc)}</b><small>${pct(mFc)}</small></div></div>`}
- <div class=ecoBar ${!(P.total>0)&&!(F.total>0)?'hidden':''}>${rows.map(([k],i)=>`<i style="width:${Math.max(0,fc(k)/tot*100)}%;background:${col[i]}"></i>`).join('')}<i style="width:${Math.max(0,mFc/tot*100)}%;background:var(--primary)"></i></div>
+ ${!(P.total-P.overhead>0)&&!(F.total-F.overhead>0)?`<div class=noData>Маржа: <b>нет данных</b> — заполните спецификацию или внесите расходы, чтобы посчитать себестоимость</div>`:`<div class=mBig><div><small>Маржа по плану</small>${P.total-P.overhead>0?`<b class="${mPlan<0?'neg':''}">${rub(mPlan)}</b><small>${pct(mPlan)} от договора</small>`:`<b class=muted>нет данных</b><small>нет плана себестоимости</small>`}</div><div style="text-align:right"><small>${done?'Итог по факту':'Прогноз на сдачу'}</small><b class="${P.total-P.overhead>0&&mFc<mPlan-0.5?'warnC':''} ${mFc<0?'neg':''}">${rub(mFc)}</b><small>${pct(mFc)}</small></div></div>`}
+ <div class=ecoBar ${!(P.total-P.overhead>0)&&!(F.total-F.overhead>0)?'hidden':''}>${rows.map(([k],i)=>`<i style="width:${Math.max(0,fc(k)/tot*100)}%;background:${col[i]}"></i>`).join('')}<i style="width:${Math.max(0,mFc/tot*100)}%;background:var(--primary)"></i></div>
  ${!P.lines?'<div class=small>Заполните спецификацию — план посчитается из изделий.</div>':''}${P.unpriced?`<div class=small>${P.unpriced} ${plural(P.unpriced,'материал','материала','материалов')} в изделиях без цены — привяжите к прайсу в справочнике.</div>`:''}
  ${over.length?`<div class=ecoAlert>⚠ ${over.map(esc).join('<br>⚠ ')}</div>`:''}${noPlan.length?`<div class=small>Есть факт без плана: ${noPlan.join(', ')} — укажите план в «План и %».</div>`:''}
  <div class=inlineRow style="margin-top:8px"><button class="btn secondary" onclick="openExpense('${pid}')">+ Расход</button><button class="btn secondary" onclick="openDocPrices('${pid}')">Цены для КП и акта</button></div>
@@ -81,7 +81,7 @@ function openEcoPlan(pid){
  <label class=field>Субподряд и покраска, ₽<input id=epSub inputmode=decimal value="${plan.sub?moneyText(plan.sub):''}" placeholder="0"></label>
  <label class=field>Прочее, ₽<input id=epOth inputmode=decimal value="${plan.other?moneyText(plan.other):''}" placeholder="0"></label>
  <div class=label style="margin-top:10px">Для всех объектов</div>
- <label class=field>Накладные цеха, % от материалов и труда<input id=epOh inputmode=decimal value="${num(overheadPct())}"></label>
+ ${typeof ohRate==='function'&&ohRate()!=null?`<div class=info style="margin:6px 0">Накладные цеха считаются автоматически: аренда, свет и другие статьи из «Деньги → Накладные» — <b>${num(ohRate()*100,1)}% от договора</b>.<input id=epOh type=hidden value="${num(overheadPct())}"></div>`:`<label class=field>Накладные цеха, % от материалов и труда<input id=epOh inputmode=decimal value="${num(overheadPct())}"></label>`}
  <label class=field>Ставка чел-дня для плана посуточных, ₽<input id=epRate inputmode=decimal value="${moneyText(avgDayRate())}"><span class=small>${(typeof workers!=='undefined'?workers:[]).some(w=>w.active&&w.pay_type==='day'&&+w.day_rate>0)?'сейчас берётся средняя ставка ваших посуточных':'нет посуточных со ставкой — берётся это число'}</span></label>
  <div class=actions><button class="btn secondary" onclick="detail('${pid}')">Назад</button><button class=btn id=epSave2>Сохранить</button></div>`;
  openModal();['epDel','epSub','epOth','epRate'].forEach(k=>$(k).oninput=e=>fmtMoneyInput(e.target));
