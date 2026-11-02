@@ -16,7 +16,7 @@ async function loadEco(){
 // Себестоимость 1 шт строки спецификации: материалы по прайсу + труд по плану (расценки объекта)
 function lineUnitCost(l){
  const ms=catMats.filter(m=>m.item_id===l.item_id);let metal=0,other=0,unpriced=0;
- ms.forEach(m=>{const c=matCost(m);if(!c){unpriced++;return}if(m.kind==='metal')metal+=c.sum;else other+=c.sum});
+ const sp=typeof lineSpecies==='function'?lineSpecies(l):null;ms.forEach(m=>{const c=matCost(m,sp);if(!c){unpriced++;return}if(m.kind==='metal')metal+=c.sum;else other+=c.sum});
  let ops=projOps.filter(o=>o.spec_line_id===l.id);if(!ops.length)ops=catOps.filter(o=>o.item_id===l.item_id);
  const piece=ops.filter(o=>o.pay_type==='piece').reduce((s,o)=>s+(+o.rate||0),0),days=ops.filter(o=>o.pay_type==='day').reduce((s,o)=>s+(+o.norm_days||0),0);
  const labor=piece+days*avgDayRate();
@@ -126,4 +126,4 @@ async function dpToContract(pid,sum){const o=data.find(x=>x.id===pid);if(!o||!co
 // Строки документа из спецификации (с ценами владельца)
 function specDocRows(pid){const lines=specLines.filter(l=>l.project_id===pid);return lines.map(l=>({name:l.item_name,qty:+l.qty,unit:'шт',price:specPrices.get(l.id)||0}))}
 // Стоимость детали по прайсу (для расходов при «Пришло»)
-function partCost(p){const pr=priceById(p.price_item_id);if(!pr)return 0;if(p.shape==='sheet')return partArea(p)*(1+wastePct()/100)*pr.price/(sheetArea(pr)||1);if(pr.kind==='linear')return partMeters(p)*pr.price;return (+p.qty||0)*pr.price}
+function partCost(p){if(p.wood_slot_id&&typeof woodPartPrice==='function'){const w=woodPartPrice(p);return w?partMeters(p)*w.price:0}const pr=priceById(p.price_item_id);if(!pr)return 0;if(p.shape==='sheet')return partArea(p)*(1+wastePct()/100)*pr.price/(sheetArea(pr)||1);if(pr.kind==='linear')return partMeters(p)*pr.price;return (+p.qty||0)*pr.price}

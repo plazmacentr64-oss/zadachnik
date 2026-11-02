@@ -49,6 +49,7 @@ function openPriceList(){
  <input id=prQ class=searchIn placeholder="🔍 Поиск: 40х20, лист 2, уголок 50" value="${esc(priceQ)}">
  <div class="chipRow chipScroll" id=prCats><button class="chip ${!priceCat?'on':''}" data-c="">Все</button>${cats.map(c=>`<button class="chip ${priceCat===c?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
  <div id=prList></div>
+ <button class="btn wide" onclick="openWoodGrid()" style="margin-top:8px">🪵 Дерево по породам</button>
  <button class="btn secondary wide" onclick="openOwnPrice()" style="margin-top:8px">+ Своя позиция (дерево, метизы, краска…)</button>
  <div class=stickyActions><button class="btn secondary" onclick="pickPriceFile()">Загрузить .xls</button><button class=btn onclick="openPricePct()">% Изменить цены</button></div>`;
  openModal();

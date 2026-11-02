@@ -87,7 +87,7 @@ function subscribeRealtime(){
   .on('postgres_changes',{event:'*',schema:'public',table:'projects',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload())
   .on('postgres_changes',{event:'*',schema:'public',table:'tasks',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload())
   .on('postgres_changes',{event:'*',schema:'public',table:'payments',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload()).on('postgres_changes',{event:'*',schema:'public',table:'wood_items',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload());
- ['project_finance','project_expenses','spec_prices','shop_parts','spec_lines','project_ops','catalog_items','catalog_ops','catalog_materials','workers','time_days','piece_entries','payouts','pay_adjustments','week_closes'].forEach(t=>realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table:t,filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload()));
+ ['project_finance','project_expenses','spec_prices','wood_slots','wood_species','wood_prices','shop_parts','spec_lines','project_ops','catalog_items','catalog_ops','catalog_materials','workers','time_days','piece_entries','payouts','pay_adjustments','week_closes'].forEach(t=>realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table:t,filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload()));
  realtimeChannel.subscribe();
 }
 let teamStartedFor=null;

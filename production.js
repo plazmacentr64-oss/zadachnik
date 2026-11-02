@@ -27,6 +27,7 @@ async function loadProd(){
  if(typeof loadSalary==='function'&&isOwner())await loadSalary();
  if(typeof loadPrice==='function'&&isOwner()&&!priceItems.length)await loadPrice();
  if(typeof loadEco==='function'&&isOwner())await loadEco();
+ if(typeof loadWoodSpecies==='function')await loadWoodSpecies();
 }
 async function reloadProd(){await loadProd();renderCurrent();if(currentDetail)refreshDetail(currentDetail)}
 
@@ -50,7 +51,7 @@ function readCatForm(){
  if(!catDraft||!$('ciName'))return;
  catDraft.name=$('ciName').value.trim();catDraft.note=$('ciNote').value.trim();
  catDraft.ops.forEach(o=>{o.name=$('on_'+o.id).value.trim();o.pay_type=$('ot_'+o.id).value;const v=$('ov_'+o.id).value;if(o.pay_type==='piece'){o.rate=moneyVal(v);o.norm_days=0}else{o.norm_days=qtyVal(v);o.rate=0}});
- catDraft.mats.forEach(m=>{m.kind=$('mk_'+m.id).value;m.name=$('mn_'+m.id).value.trim();m.size=$('ms_'+m.id)?$('ms_'+m.id).value.trim():'';m.shape=m.kind==='other'?'piece':m.kind==='wood'?'linear':($('msh_'+m.id)?.value||m.shape||'linear');m.length_mm=Math.round(qtyVal($('ml_'+m.id)?.value))||null;m.width_mm=Math.round(qtyVal($('mw_'+m.id)?.value))||null;m.qty=qtyVal($('mq_'+m.id).value)||1;m.unit=$('mu_'+m.id)?.value||m.unit||'шт';if(m.shape==='piece'&&m.kind==='metal'&&!$('mu_'+m.id))m.unit=m.unit||'шт'});
+ catDraft.mats.forEach(m=>{m.kind=$('mk_'+m.id).value;m.name=$('mn_'+m.id).value.trim();m.size=$('ms_'+m.id)?$('ms_'+m.id).value.trim():'';m.shape=m.kind==='other'?'piece':m.kind==='wood'?'linear':($('msh_'+m.id)?.value||m.shape||'linear');m.length_mm=Math.round(qtyVal($('ml_'+m.id)?.value))||null;m.width_mm=Math.round(qtyVal($('mw_'+m.id)?.value))||null;m.qty=qtyVal($('mq_'+m.id).value)||1;m.unit=$('mu_'+m.id)?.value||m.unit||'шт';if($('mws_'+m.id)){m.wood_slot_id=m.kind==='wood'?($('mws_'+m.id).value||null):null;const ws=m.wood_slot_id&&woodSlot(m.wood_slot_id);if(ws){m.name=ws.name;m.size=ws.nominal;m.price_item_id=null}}else if(m.kind!=='wood')m.wood_slot_id=null;if(m.shape==='piece'&&m.kind==='metal'&&!$('mu_'+m.id))m.unit=m.unit||'шт'});
 }
 function renderCatItem(){
  const d=catDraft,own=isOwner(),ro=own?'':'disabled';
@@ -68,7 +69,8 @@ function renderCatItem(){
  ${own?`<div class=actions><button class="btn secondary" onclick="${d.back?`detail('${d.back}')`:'openCatalog()'}">Назад</button><button class=btn id=ciSave onclick="saveCatItem()">Сохранить изделие</button></div>${d.id?`<button class=dangerLink onclick="archiveCatItem('${d.id}')">Убрать из справочника</button>`:''}`:''}`;
 }
 function matEdHtml(m,own,ro){
- const p=own&&typeof priceById==='function'?priceById(m.price_item_id):null,c=p?matCost(m):null,shape=m.kind==='other'?'piece':m.kind==='wood'?'linear':(m.shape||'linear');
+ const wslot=m.kind==='wood'&&typeof woodSlot==='function'&&m.wood_slot_id?woodSlot(m.wood_slot_id):null;
+ const p=own&&!wslot&&typeof priceById==='function'?priceById(m.price_item_id):null,c=p?matCost(m):null,shape=m.kind==='other'?'piece':m.kind==='wood'?'linear':(m.shape||'linear');
  const del=own?`<button class=edDel aria-label="Убрать материал" onclick="readCatForm();catDraft.mats=catDraft.mats.filter(x=>x.id!=='${m.id}');renderCatItem()">×</button>`:'';
  const ch=`onchange="readCatForm();renderCatItem()"`,rc=p?`oninput="matRecalc()"`:'';
  let g='';
@@ -76,9 +78,10 @@ function matEdHtml(m,own,ro){
  else if(shape==='linear')g=`<div class=edGrid4>${p?'':`<label>${m.kind==='wood'?'Сечение':'Размер'}<input id="ms_${m.id}" value="${esc(m.size||'')}" placeholder="${m.kind==='wood'?'40×90':'40×20×2'}" ${ro}></label>`}<label>Длина, мм<input id="ml_${m.id}" inputmode=numeric value="${m.length_mm||''}" placeholder="мм" ${ro} ${rc}></label><label>Деталей на 1 шт<input id="mq_${m.id}" inputmode=decimal value="${num(m.qty||1)}" ${ro} ${rc}></label></div>`;
  else g=`<div class=edGrid4>${p?'':`<label>Размер<input id="ms_${m.id}" value="${esc(m.size||'')}" placeholder="—" ${ro}></label>`}<label>Кол-во на 1 шт<input id="mq_${m.id}" inputmode=decimal value="${num(m.qty||1)}" ${ro} ${rc}></label><label>Ед.<select id="mu_${m.id}" ${ro}>${[...new Set([m.unit||'шт',...UNITS])].map(u=>`<option ${m.unit===u?'selected':''}>${u}</option>`).join('')}</select></label></div>`;
  return `<div class=matEd><div class=edRow><select id="mk_${m.id}" aria-label="Вид" ${ro} ${ch}>${['metal','wood','other'].map(k=>`<option value=${k} ${m.kind===k?'selected':''}>${KIND_ICON[k]} ${KIND_NAME[k]}</option>`).join('')}</select>${m.kind==='metal'?`<select id="msh_${m.id}" aria-label="Форма" ${ro} ${ch} ${p?'disabled':''}><option value=linear ${shape==='linear'?'selected':''}>Погонаж</option><option value=sheet ${shape==='sheet'?'selected':''}>Лист</option><option value=piece ${shape==='piece'?'selected':''}>Штучно</option></select>`:''}${del}</div>
- <div class=edRow><input id="mn_${m.id}" list=matNames value="${esc(m.name)}" placeholder="${m.kind==='wood'?'Лиственница':m.kind==='metal'?(shape==='sheet'?'Лист 2,0 х/к':'Труба проф.'):'Болт М8×60'}" aria-label="Материал" ${ro} ${p?'readonly':''}>${own&&priceItems.length?`<button class="chip" type=button onclick="pickMatFromPrice('${m.id}')">${p?'Сменить':'Из прайса'}</button>`:''}</div>
+ ${m.kind==='wood'&&typeof woodSlots!=='undefined'&&woodSlots.length?`<div class=edRow><select id="mws_${m.id}" aria-label="Типоразмер дерева" ${ro} ${ch}><option value="">— своё дерево (вручную) —</option>${woodSlots.map(s=>`<option value="${s.id}" ${m.wood_slot_id===s.id?'selected':''}>${esc(s.name)} · порода — в объекте</option>`).join('')}</select></div>`:''}
+ <div class=edRow ${wslot?'hidden':''}><input id="mn_${m.id}" list=matNames value="${esc(m.name)}" placeholder="${m.kind==='wood'?'Лиственница':m.kind==='metal'?(shape==='sheet'?'Лист 2,0 х/к':'Труба проф.'):'Болт М8×60'}" aria-label="Материал" ${ro} ${p?'readonly':''}>${own&&priceItems.length?`<button class="chip" type=button onclick="pickMatFromPrice('${m.id}')">${p?'Сменить':'Из прайса'}</button>`:''}</div>
  ${p?`<div class=small style="margin:2px 0 0">${priceUnitText(p)} · ${esc(priceSub(p))} · <button class=linkBtn style="padding:0" onclick="readCatForm();const x=catDraft.mats.find(x=>x.id==='${m.id}');x.price_item_id=null;renderCatItem()">отвязать от прайса</button></div>`:''}
- ${g}${c?`<div class=calcLine2 id="mc_${m.id}">${c.text} = <b>${rub(c.sum)}</b></div>`:''}</div>`;
+ ${g}${c?`<div class=calcLine2 id="mc_${m.id}">${c.text} = <b>${rub(c.sum)}</b></div>`:''}${wslot&&own?`<div class=calcLine2>${woodSpecies.map(sp=>{const cc=matCost(m,sp.id);return cc?`${esc(sp.name)}: ${num((+m.length_mm||0)/1000*(+m.qty||0),3)} м × ${rub(woodPrice(m.wood_slot_id,sp.id).price)} = <b>${rub(cc.sum)}</b>`:`${esc(sp.name)}: цена не задана`}).join('<br>')}</div>`:''}</div>`;
 }
 function matRecalc(){readCatForm();catDraft.mats.forEach(m=>{const el=$('mc_'+m.id);if(!el)return;const c=matCost(m);if(c)el.innerHTML=`${c.text} = <b>${rub(c.sum)}</b>`});const t=$('matTotal');if(t)t.textContent=rub(itemMatCost(null,catDraft.mats).sum)}
 function pickMatFromPrice(matId){
@@ -104,7 +107,7 @@ async function saveCatItem(){
   for(const o of catOps.filter(x=>x.item_id===id&&!keepO.has(x.id)))await q(sb.from('catalog_ops').delete().eq('id',o.id));
   for(const m of catMats.filter(x=>x.item_id===id&&!keepM.has(x.id)))await q(sb.from('catalog_materials').delete().eq('id',m.id));
   if(d.ops.length)await q(sb.from('catalog_ops').upsert(d.ops.map((o,i)=>({id:o.id,workspace_id:currentWorkspace,item_id:id,name:o.name,pay_type:o.pay_type,rate:+o.rate||0,norm_days:+o.norm_days||0,sort:i}))));
-  if(d.mats.length)await q(sb.from('catalog_materials').upsert(d.mats.map((m,i)=>({id:m.id,workspace_id:currentWorkspace,item_id:id,kind:m.kind,name:m.name,size:m.size||'',length_mm:m.shape==='piece'?null:(m.length_mm||null),qty:+m.qty||1,unit:m.unit||'шт',sort:i,shape:m.shape||(m.kind==='other'?'piece':'linear'),price_item_id:m.price_item_id||null,width_mm:m.shape==='sheet'?(m.width_mm||null):null,stock_len_mm:m.stock_len_mm||null,sheet_w:m.sheet_w||null,sheet_l:m.sheet_l||null}))));
+  if(d.mats.length)await q(sb.from('catalog_materials').upsert(d.mats.map((m,i)=>({id:m.id,workspace_id:currentWorkspace,item_id:id,kind:m.kind,name:m.name,size:m.size||'',length_mm:m.shape==='piece'?null:(m.length_mm||null),qty:+m.qty||1,unit:m.unit||'шт',sort:i,shape:m.shape||(m.kind==='other'?'piece':'linear'),price_item_id:m.price_item_id||null,width_mm:m.shape==='sheet'?(m.width_mm||null):null,stock_len_mm:m.stock_len_mm||null,sheet_w:m.sheet_w||null,sheet_l:m.sheet_l||null,wood_slot_id:m.kind==='wood'?(m.wood_slot_id||null):null}))));
   // новые расценки — к объектам в работе только по согласию
   const changed=d.ops.filter(o=>{const p=old.find(x=>x.id===o.id);return p&&(+p.rate!==+o.rate||+p.norm_days!==+o.norm_days)});
   const used=[...new Set(specLines.filter(l=>l.item_id===id).map(l=>l.project_id))].filter(pid=>data.find(o=>o.id===pid&&o.status!=='Выполнено'));
@@ -134,6 +137,7 @@ function specBoxHtml(pid){
  const lab=own?projectLabor(pid):null,pp=parts.filter(p=>p.project_id===pid),toOrder=pp.filter(p=>p.status==='order').length,ready=pp.filter(p=>p.status==='ready').length;
  let h=`<div class=info id=specBox><div class=dHead><div class=label>Спецификация</div>${own?`<button class=chip onclick="openCatalog()">Справочник</button>`:''}</div>`;
  h+=lines.map(l=>{const item=catItems.find(i=>i.id===l.item_id);return `<div class=specLine><div><b>${esc(l.item_name)}</b>${item?'':'<div class=small>изделие убрано из справочника</div>'}</div>${own?`<input class=specQty inputmode=decimal value="${num(l.qty)}" aria-label="Количество ${esc(l.item_name)}" onchange="specQty('${l.id}',this)"><span class=small>шт</span><button class=edDel aria-label="Убрать из спецификации" onclick="specDelete('${l.id}')">×</button>`:`<b>${num(l.qty)} шт</b>`}</div>`}).join('')||`<div class=small>Изделий пока нет. Старое описание: «${esc(data.find(o=>o.id===pid)?.items||'—')}»</div>`;
+ if(typeof speciesBoxHtml==='function')h+=speciesBoxHtml(pid);
  if(own)h+=`<button class="btn secondary wide" onclick="openSpecAdd('${pid}')">+ Изделие из справочника</button>`;
  if(ops.length){
   h+=`<div class=label style="margin-top:12px">План работ</div>`;
@@ -176,9 +180,10 @@ async function syncProject(pid,silent){
   for(const m of catMats.filter(x=>x.item_id===item.id)){
    // Заказанное, пришедшее и готовое не трогаем: разница — отдельной деталью «к заказу», излишек — предупреждением
    const mine=parts.filter(x=>x.spec_line_id===l.id&&x.catalog_material_id===m.id),need=Math.round(l.qty*m.qty*1000)/1000;
-   const fixed=mine.filter(x=>x.status!=='order'),open=mine.filter(x=>x.status==='order'),have=fixed.reduce((s,x)=>s+(+x.qty||0),0),diff=Math.round((need-have)*1000)/1000;
-   fixed.forEach(x=>wantParts.add(x.id));
    const body={kind:m.kind,name:m.name,size:m.size||'',length_mm:m.length_mm||null,unit:m.unit||'шт',shape:m.shape||(m.kind==='other'?'piece':'linear'),price_item_id:m.price_item_id||null,width_mm:m.width_mm||null,stock_len_mm:m.stock_len_mm||null,sheet_w:m.sheet_w||null,sheet_l:m.sheet_l||null};
+   if(m.wood_slot_id&&typeof woodBody==='function')Object.assign(body,woodBody(m,l));
+   const fixedAll=mine.filter(x=>x.status!=='order'),fixed=fixedAll.filter(x=>x.name===body.name&&String(x.size||'')===String(body.size||'')),open=mine.filter(x=>x.status==='order'),have=fixed.reduce((s,x)=>s+(+x.qty||0),0),diff=Math.round((need-have)*1000)/1000;
+   fixedAll.forEach(x=>wantParts.add(x.id));if(fixedAll.length>fixed.length)surplus.push(`${l.item_name}: уже заказано «${fixedAll.find(x=>!fixed.includes(x)).name} ${fixedAll.find(x=>!fixed.includes(x)).size||''}» — порода/материал сменились`);
    if(diff<0)surplus.push(`${m.name} ${m.size||''}: заказано больше нужного на ${num(-diff)} ${m.length_mm?'шт':m.unit||'шт'}`);
    if(diff>0){const ex=open[0];
     if(ex){wantParts.add(ex.id);const same=+ex.qty===diff&&Object.keys(body).every(k=>String(ex[k]??'')===String(body[k]??''));if(!same)await q(sb.from('shop_parts').update({...body,qty:diff,updated_at:new Date().toISOString()}).eq('id',ex.id))}
@@ -191,7 +196,7 @@ async function syncProject(pid,silent){
  }
  for(const p of parts.filter(x=>x.project_id===pid&&x.source==='auto'&&!wantParts.has(x.id)&&x.status==='order'))await q(sb.from('shop_parts').delete().eq('id',p.id));
  await loadProd();if(!silent){renderCurrent();refreshDetail(pid)}
- if(surplus.length)setTimeout(()=>alert('Изделий стало меньше, чем уже заказано:\n'+surplus.join('\n')+'\n\nЛишнее останется в цеху — отмените заказ у поставщика или пустите в другой объект.'),50);
+ if(surplus.length)setTimeout(()=>alert('Уже заказано больше или не то, что теперь нужно:\n'+surplus.join('\n')+'\n\nЛишнее останется в цеху — отмените заказ у поставщика или пустите в другой объект.'),50);
 }
 
 /* ---------- Цех ---------- */
@@ -263,7 +268,7 @@ function supplyGroups(){
  for(const p of parts){if(!ids.has(p.project_id))continue;
   const sh=p.shape==='sheet',lin=!sh&&p.kind!=='other'&&p.shape!=='piece'&&p.length_mm;
   const key=sh?['sheet',p.price_item_id||p.name.trim().toLowerCase(),p.sheet_w||0,p.sheet_l||0].join('|'):[p.kind,p.price_item_id||p.name.trim().toLowerCase(),p.price_item_id?'':normSize(p.size),lin?'m':p.unit].join('|');
-  let x=g.get(key);if(!x){x={key,kind:p.kind,name:capFirst(p.name.trim()),size:sizeShow(p.size),unit:sh?'м²':lin?'м':(p.unit||'шт'),linear:!!lin,sheet:sh,sheetW:+p.sheet_w||0,sheetL:+p.sheet_l||0,need:0,have:0,ordered:0,order:0,bars:0,vol:0,parts:[],suppliers:new Set(),byLen:{},longM:0,orderedOn:'',price:own&&typeof priceById==='function'?priceById(p.price_item_id):null};g.set(key,x)}
+  let x=g.get(key);if(!x){x={key,kind:p.kind,name:capFirst(p.name.trim()),size:sizeShow(p.size),unit:sh?'м²':lin?'м':(p.unit||'шт'),linear:!!lin,sheet:sh,sheetW:+p.sheet_w||0,sheetL:+p.sheet_l||0,need:0,have:0,ordered:0,order:0,bars:0,vol:0,parts:[],suppliers:new Set(),byLen:{},longM:0,orderedOn:'',price:own?((typeof priceById==='function'&&priceById(p.price_item_id))||(typeof woodPartPrice==='function'&&woodPartPrice(p))||null):null};g.set(key,x)}
   const v=sh?partArea(p):lin?partMeters(p):(+p.qty||0);x.need+=v;x.parts.push(p);
   if(p.status==='order'){x.order+=v;if(lin&&p.kind==='metal'){const st=p.stock_len_mm||6000;if(p.length_mm>st)x.longM+=partMeters(p);else{const k=p.length_mm+'|'+st;x.byLen[k]=(x.byLen[k]||0)+(+p.qty||0)}}if(p.kind==='wood')x.vol+=partMeters(p)*sectionArea(p.size)}
   else if(p.status==='ordered'){x.ordered+=v;if(p.supplier)x.suppliers.add(p.supplier);if(p.ordered_on&&(!x.orderedOn||p.ordered_on<x.orderedOn))x.orderedOn=p.ordered_on}else x.have+=v;
