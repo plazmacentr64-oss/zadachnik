@@ -1,6 +1,10 @@
 'use strict';
 // v46: прайс металла (только владелец), выбор материала из прайса, лист в м² + обрезки, цены процентами
-let priceItems=[],wsSettings={},priceCat='',priceQ='';
+let priceItems=[],wsSettings={},priceCat='',priceQ='',priceTab='metal';
+const PRICE_TABS=[['metal','⚙ Металл'],['wood','🪵 Дерево'],['paint','🎨 Краска'],['hw','🔩 Метизы']];
+const priceTabOf=c=>/дерев|брус|доск|листвен|сосн|осин|фанер|вагонк/i.test(c||'')?'wood':/краск|эмал|грунт|порош|лак|раствор|ral/i.test(c||'')?'paint':/метиз|болт|гайк|саморез|анкер|шайб|винт|заклеп|шпильк/i.test(c||'')?'hw':'metal';
+const inTab=p=>priceTabOf(p.category)===priceTab;
+const tabName=()=>PRICE_TABS.find(t=>t[0]===priceTab)[1].replace(/^\S+ /,'');
 const wastePct=()=>{const v=+wsSettings.sheet_waste_pct;return wsSettings.sheet_waste_pct!=null&&isFinite(v)&&v>=0&&v<=200?v:20};
 const priceById=id=>id?priceItems.find(p=>p.id===id):null;
 const sheetArea=p=>(+p.sheet_w||0)*(+p.sheet_l||0)/1e6;
@@ -41,22 +45,24 @@ function itemMatCost(itemId,mats){const ms=mats||catMats.filter(m=>m.item_id===i
 function priceCats(){return [...new Set(priceItems.map(p=>p.category))]}
 function openPriceList(){
  if(!isOwner())return;
- const cats=priceCats();if(priceCat&&!cats.includes(priceCat))priceCat='';
- const first=priceItems[0];
- $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Прайс металла</h2>
- <div class=summary>${first?`${esc(first.supplier||'Поставщик')} · от ${first.price_date?parseDate(first.price_date).toLocaleDateString('ru-RU'):'—'} · ${priceItems.length} ${plural(priceItems.length,'позиция','позиции','позиций')}`:'Прайс не загружен'}</div>
- <div class=info><div class=kvRow><span>Обрезки листа</span><b>${num(wastePct())}%</b></div><div class=kvRow><span>Изменено вручную или процентом</span><b>${priceItems.filter(p=>+p.price!==+p.base_price).length} поз.</b></div></div>
- <input id=prQ class=searchIn placeholder="🔍 Поиск: 40х20, лист 2, уголок 50" value="${esc(priceQ)}">
- <div class="chipRow chipScroll" id=prCats><button class="chip ${!priceCat?'on':''}" data-c="">Все</button>${cats.map(c=>`<button class="chip ${priceCat===c?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+ const cats=priceCats().filter(c=>priceTabOf(c)===priceTab);if(priceCat&&!cats.includes(priceCat))priceCat='';
+ const first=priceItems.find(p=>p.supplier&&p.supplier!=='Своя')||priceItems[0],tabItems=priceItems.filter(inTab);
+ $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Прайс</h2>
+ <div class=summary>${first?`${esc(first.supplier||'Поставщик')} · от ${first.price_date?parseDate(first.price_date).toLocaleDateString('ru-RU'):'—'}`:'Прайс не загружен'}</div>
+ <div class="segBar seg4" id=prTabs>${PRICE_TABS.map(([k,l])=>`<button type=button class="${priceTab===k?'on':''}" data-t=${k}>${l} · ${priceItems.filter(p=>priceTabOf(p.category)===k).length}</button>`).join('')}</div>
+ ${priceTab==='metal'?`<div class=info><div class=kvRow><span>Обрезки листа</span><b>${num(wastePct())}%</b></div><div class=kvRow><span>Изменено вручную или процентом</span><b>${tabItems.filter(p=>+p.price!==+p.base_price).length} поз.</b></div></div>`:''}
+ ${priceTab==='wood'?`<button class="btn wide" onclick="openWoodGrid()" style="margin:4px 0 8px">🪵 Брус: таблица «сечение × порода»</button>`:''}
+ <input id=prQ class=searchIn placeholder="🔍 Поиск: ${priceTab==='metal'?'40х20, лист 2, уголок 50':priceTab==='paint'?'эмаль, грунт, RAL':priceTab==='hw'?'болт М8, саморез':'лиственница, доска'}" value="${esc(priceQ)}">
+ ${cats.length>1?'':'<!--'}<div class="chipRow chipScroll" id=prCats><button class="chip ${!priceCat?'on':''}" data-c="">Все</button>${cats.map(c=>`<button class="chip ${priceCat===c?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>${cats.length>1?'':'-->'}
  <div id=prList></div>
- <button class="btn wide" onclick="openWoodGrid()" style="margin-top:8px">🪵 Дерево по породам</button>
- <button class="btn secondary wide" onclick="openOwnPrice()" style="margin-top:8px">+ Своя позиция (дерево, метизы, краска…)</button>
- <div class=stickyActions><button class="btn secondary" onclick="pickPriceFile()">Загрузить .xls</button><button class=btn onclick="openPricePct()">% Изменить цены</button></div>`;
+ <button class="btn secondary wide" onclick="openOwnPrice()" style="margin-top:8px">+ Позиция в «${tabName()}»</button>
+ <div class=stickyActions>${priceTab==='metal'?`<button class="btn secondary" onclick="pickPriceFile()">Загрузить .xls</button>`:''}<button class=btn onclick="openPricePct()">% Изменить цены · ${tabName()}</button></div>`;
  openModal();
- const draw=()=>{const qy=priceQ.toLowerCase().replace(/\s+/g,'').replace(/(\d)[xх*](?=\d)/g,'$1×'),list=priceItems.filter(p=>(!priceCat||p.category===priceCat)&&(!qy||p.name.toLowerCase().replace(/\s+/g,'').includes(qy)));
-  $('prList').innerHTML=list.slice(0,150).map(p=>`<button class=priceRow onclick="editPrice('${p.id}')"><div><b>${esc(p.name)}</b><span>${esc(priceSub(p))}</span></div><strong>${priceUnitText(p)}</strong></button>`).join('')+(list.length>150?`<div class=small>Показаны 150 из ${list.length} — уточните поиск</div>`:'')||'<div class=empty>Ничего не найдено</div>'};
+ const draw=()=>{const qy=priceQ.toLowerCase().replace(/\s+/g,'').replace(/(\d)[xх*](?=\d)/g,'$1×'),list=priceItems.filter(p=>inTab(p)&&(!priceCat||p.category===priceCat)&&(!qy||p.name.toLowerCase().replace(/\s+/g,'').includes(qy)));
+  $('prList').innerHTML=list.slice(0,150).map(p=>`<button class=priceRow onclick="editPrice('${p.id}')"><div><b>${esc(p.name)}</b><span>${esc(priceSub(p))}</span></div><strong>${priceUnitText(p)}</strong></button>`).join('')+(list.length>150?`<div class=small>Показаны 150 из ${list.length} — уточните поиск</div>`:'')||`<div class=empty>${priceItems.some(inTab)?'Ничего не найдено':'Во вкладке пока пусто — добавьте позицию'}</div>`};
+ $('prTabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;priceTab=b.dataset.t;priceCat='';priceQ='';openPriceList()};
  $('prQ').oninput=e=>{priceQ=e.target.value;draw()};
- $('prCats').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;priceCat=b.dataset.c;[...$('prCats').children].forEach(x=>x.classList.toggle('on',x===b));draw()};
+ if($('prCats'))$('prCats').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;priceCat=b.dataset.c;[...$('prCats').children].forEach(x=>x.classList.toggle('on',x===b));draw()};
  draw();
 }
 function editPrice(id){
@@ -72,19 +78,19 @@ function editPrice(id){
   try{await q(sb.from('price_items').update(body).eq('id',id));Object.assign(p,body);toast('Цена сохранена');openPriceList();renderCurrent()}catch(e){failSave(e)}};
 }
 function openPricePct(){
- const cats=priceCats();let scope=priceCat||'',pct=5;
+ const cats=priceCats().filter(c=>priceTabOf(c)===priceTab);let scope=priceCat||'',pct=5;
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Изменить цены</h2>
- <label class=field>Что меняем<select id=ppScope><option value="">Весь прайс</option>${cats.map(c=>`<option ${c===scope?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+ <label class=field>Что меняем<select id=ppScope><option value="">Вся вкладка «${tabName()}»</option>${cats.map(c=>`<option ${c===scope?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
  <div class=label>На сколько</div><div class=chipRow id=ppPcts>${[-10,-5,5,10].map(v=>`<button type=button class="chip ${v===pct?'on':''}" data-v="${v}">${v>0?'+':'−'}${Math.abs(v)}%</button>`).join('')}</div>
  <label class=field>Свой %, можно с минусом<input id=ppVal inputmode=decimal value="5"></label>
  <label class=check2><input type=checkbox id=ppFromBase> Считать от цены поставщика (а не от текущей)</label>
  <div class=label style="margin-top:8px">Будет так</div><div id=ppPrev class=info></div>
  <div class=actions><button class="btn secondary" onclick="openPriceList()">Назад</button><button class=btn id=ppApply>Применить</button></div>
- <button class=linkBtn id=ppReset>Вернуть все цены как в прайсе поставщика</button>
- <div class=label style="margin-top:14px">Обрезки листа</div><div class=chipRow id=ppWaste>${[10,15,20,25,30].map(v=>`<button type=button class="chip ${v===wastePct()?'on':''}" data-v="${v}">${v}%</button>`).join('')}</div>
- <label class=field>Свой % обрезков<input id=ppWasteVal inputmode=decimal value="${num(wastePct())}"></label>`;
+ <button class=linkBtn id=ppReset>Вернуть цены как в прайсе поставщика</button>
+ ${priceTab==='metal'?'':'<div hidden>'}<div class=label style="margin-top:14px">Обрезки листа</div><div class=chipRow id=ppWaste>${[10,15,20,25,30].map(v=>`<button type=button class="chip ${v===wastePct()?'on':''}" data-v="${v}">${v}%</button>`).join('')}</div>
+ <label class=field>Свой % обрезков<input id=ppWasteVal inputmode=decimal value="${num(wastePct())}"></label>${priceTab==='metal'?'':'</div>'}`;
  openModal();
- const list=()=>priceItems.filter(p=>!$('ppScope').value||p.category===$('ppScope').value);
+ const list=()=>priceItems.filter(p=>inTab(p)&&(!$('ppScope').value||p.category===$('ppScope').value));
  const newP=p=>Math.round(((($('ppFromBase').checked?+p.base_price:+p.price))*(1+pct/100))*100)/100;
  const prev=()=>{const l=list();$('ppPrev').innerHTML=l.slice(0,3).map(p=>`<div class=kvRow><span>${esc(p.name)}</span><b><s style="color:#99a3ad;font-weight:400">${num(p.price,2)}</s> → ${rub(newP(p))}</b></div>`).join('')+`<div class=small>${l.length} ${plural(l.length,'позиция','позиции','позиций')}</div>`;$('ppApply').textContent=`Применить ${pct>0?'+':''}${num(pct,2)}% к ${l.length} поз.`};
  const setPct=v=>{pct=v;$('ppVal').value=num(v,2);[...$('ppPcts').children].forEach(x=>x.classList.toggle('on',+x.dataset.v===v));prev()};
@@ -127,16 +133,16 @@ function openPricePicker(onPick,onBack){
 
 // Своя позиция прайса: дерево за метр, метизы и краска за штуку/кг, свой лист
 function openOwnPrice(){
- const cats=['Дерево','Метизы','Краска и грунт','Прочее'];let kind='linear';
+ const cats=['Дерево','Метизы','Краска и грунт','Прочее'],defCat={wood:'Дерево',paint:'Краска и грунт',hw:'Метизы',metal:priceCat||'Прочее'}[priceTab];let kind=priceTab==='wood'?'linear':'piece';
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Своя позиция</h2>
- <label class=field>Раздел<input id=opCat list=opCats value="Дерево"><datalist id=opCats>${[...new Set([...cats,...priceCats()])].map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label>
+ <label class=field>Раздел<input id=opCat list=opCats value="${esc(defCat)}"><datalist id=opCats>${[...new Set([...cats,...priceCats()])].map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label>
  <label class=field>Название<input id=opName placeholder="Лиственница 40×90 / Болт М8×60 / Краска RAL 7016"></label>
- <div class=chipRow id=opKind><button type=button class="chip on" data-v=linear>За метр (погонаж)</button><button type=button class=chip data-v=piece>За штуку / кг / л</button></div>
- <div class=inlineRow><label class=field>Цена, ₽<input id=opPrice inputmode=decimal></label><label class=field id=opUnitBox hidden>Ед.<select id=opUnit>${['шт','кг','л','компл','м²','уп'].map(u=>`<option>${u}</option>`).join('')}</select></label><label class=field id=opLenBox>Длина хлыста/доски, м<input id=opLen inputmode=decimal value="6"></label></div>
+ <div class=chipRow id=opKind><button type=button class="chip ${kind==='linear'?'on':''}" data-v=linear>За метр (погонаж)</button><button type=button class="chip ${kind==='piece'?'on':''}" data-v=piece>За штуку / кг / л</button></div>
+ <div class=inlineRow><label class=field>Цена, ₽<input id=opPrice inputmode=decimal></label><label class=field id=opUnitBox ${kind==='piece'?'':'hidden'}>Ед.<select id=opUnit>${['шт','кг','л','компл','м²','уп'].map(u=>`<option>${u}</option>`).join('')}</select></label><label class=field id=opLenBox ${kind==='linear'?'':'hidden'}>Длина хлыста/доски, м<input id=opLen inputmode=decimal value="6"></label></div>
  <div class=actions><button class="btn secondary" onclick="openPriceList()">Назад</button><button class=btn id=opSave>Добавить</button></div>`;
  openModal();$('opPrice').oninput=e=>fmtMoneyInput(e.target);
  $('opKind').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;kind=b.dataset.v;[...$('opKind').children].forEach(x=>x.classList.toggle('on',x===b));$('opUnitBox').hidden=kind!=='piece';$('opLenBox').hidden=kind!=='linear'};
  $('opSave').onclick=async()=>{const name=$('opName').value.trim(),cat=$('opCat').value.trim()||'Прочее',pr=moneyVal($('opPrice').value);if(!name)return alert('Укажите название');if(!pr)return alert('Укажите цену');
   const row={workspace_id:currentWorkspace,category:cat,name,kind,unit:kind==='linear'?'м':$('opUnit').value,stock_len_mm:kind==='linear'?Math.round((qtyVal($('opLen').value)||6)*1000):null,base_price:pr,price:pr,supplier:'Своя',price_date:localISO(),sort:9000+priceItems.length};
-  try{await q(sb.from('price_items').insert(row));await loadPrice();toast('Добавлено в прайс');priceCat=cat;openPriceList()}catch(e){failSave(e)}};
+  try{await q(sb.from('price_items').insert(row));await loadPrice();toast('Добавлено в прайс');priceTab=priceTabOf(cat);priceCat=cat;openPriceList()}catch(e){failSave(e)}};
 }

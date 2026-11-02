@@ -275,7 +275,7 @@ function openSheetOfWork(wid){
  adjs.filter(a=>a.worker_id===wid&&a.adj_date>=ws&&a.adj_date<=end).forEach(a=>lines.push(`${shortDate(a.adj_date)}: ${a.reason} ${a.amount>0?'+':''}${rub(a.amount)}`));
  payouts.filter(p=>p.worker_id===wid&&p.paid_on>=ws&&p.paid_on<=end).forEach(p=>lines.push(`${shortDate(p.paid_on)}: выдано ${rub(p.amount)} (${p.method==='cash'?'наличные':'карта'})`));
  const txt=`${w.name} · неделя ${weekLabel(ws)}\n`+(Math.abs(r.prev)>0.004?`С прошлых недель: ${rub(r.prev)}\n`:'')+lines.join('\n')+`\nИтого ${r.bal>=0?'к выдаче':'переплата'}: ${rub(r.bal)}`;
- $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Лист работ</h2><textarea id=sowText class=supText rows=14 readonly>${esc(txt)}</textarea><div class=actions><button class="btn secondary" onclick=closeModal()>Закрыть</button><button class=btn id=sowCopy>Скопировать для сотрудника</button></div>`;
+ $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>Лист работ</h2><textarea id=sowText class="supText sow" rows=14 readonly wrap=soft>${esc(txt)}</textarea><div class=actions><button class="btn secondary" onclick=closeModal()>Закрыть</button><button class=btn id=sowCopy>Скопировать для сотрудника</button></div>`;
  openModal();$('sowCopy').onclick=async()=>{try{await navigator.clipboard.writeText(txt);toast('Скопировано')}catch(e){$('sowText').select();toast('Выделено — скопируйте вручную')}};
 }
 
@@ -293,8 +293,7 @@ function openWorker(id){
  <label class=field>Имя<input id=wkName value="${esc(w.name)}" placeholder="Например: Сергей"></label>
  <div class=label>Оплата по умолчанию</div><div class=chipRow id=wkType><button type=button class="chip ${w.pay_type==='day'?'on':''}" data-v=day>Посуточно</button><button type=button class="chip ${w.pay_type==='piece'?'on':''}" data-v=piece>Сдельно</button></div>
  <div class=small>Сдельщику тоже можно отметить день посуточно, а посуточному — внести сдельную работу.</div>
- <div class=inlineRow><label class=field>Ставка за день, ₽<input id=wkDay inputmode=decimal value="${moneyText(w.day_rate)}"></label><label class=field>За час переработки, ₽<input id=wkOt inputmode=decimal value="${moneyText(w.ot_rate)}"></label></div>
- <label class=field>Ставка за выходной день, ₽ (если другая)<input id=wkWe inputmode=decimal value="${w.weekend_rate?moneyText(w.weekend_rate):''}" placeholder="как в будни"></label>
+ <div class=rateBox><label class=rateLine><span>Ставка за день, ₽</span><input id=wkDay inputmode=decimal value="${moneyText(w.day_rate)}"></label><label class=rateLine><span>За час переработки, ₽</span><input id=wkOt inputmode=decimal value="${moneyText(w.ot_rate)}"></label><label class=rateLine><span>За выходной день, ₽<small>если другая</small></span><input id=wkWe inputmode=decimal value="${w.weekend_rate?moneyText(w.weekend_rate):''}" placeholder="как в будни"></label></div>
  <label class=field>Аккаунт в приложении (увидит свою зарплату в «Цех → Моя работа»)<select id=wkUser><option value="">— не привязан —</option>${members.filter(m=>m.role!=='owner'||m.user_id===w.user_id).map(m=>`<option value="${m.user_id}" ${w.user_id===m.user_id?'selected':''}>${esc(m.display_name||m.email||'Сотрудник')}${m.email?' · '+esc(m.email):''}</option>`).join('')}</select></label>
  ${id?'<div class=small>Новая ставка — только для новых отметок. Прошлые недели не пересчитываются.</div>':''}
  ${id?`<label class=check2><input type=checkbox id=wkActive ${w.active?'checked':''}> Работает (снимите — уйдёт в архив, долги сохранятся)</label>`:''}

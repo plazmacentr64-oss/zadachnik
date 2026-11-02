@@ -43,14 +43,14 @@ function openCatalog(){
 let catDraft=null;
 function openCatItem(id,backProject){
  const i=catItems.find(x=>x.id===id);
- catDraft={id:i?.id||null,name:i?.name||'',note:i?.note||'',unit:i?.unit||'шт',back:backProject||'',
+ catDraft={id:i?.id||null,name:i?.name||'',note:i?.note||'',unit:i?.unit||'шт',category:i?(typeof catOf==='function'?catOf(i):i.category||''):(typeof catNewSec!=='undefined'&&catNewSec||''),back:backProject||'',
   ops:catOps.filter(x=>x.item_id===id).map(x=>({...x})),mats:catMats.filter(x=>x.item_id===id).map(x=>({...x}))};
  if(!i){catDraft.ops=[{id:uuid(),name:'Сварка',pay_type:'piece',rate:0,norm_days:0},{id:uuid(),name:'Покраска',pay_type:'piece',rate:0,norm_days:0},{id:uuid(),name:'Монтаж на объекте',pay_type:'day',rate:0,norm_days:0}]}
  renderCatItem();openModal();
 }
 function readCatForm(){
  if(!catDraft||!$('ciName'))return;
- catDraft.name=$('ciName').value.trim();catDraft.note=$('ciNote').value.trim();if($('ciUnit'))catDraft.unit=$('ciUnit').value;
+ catDraft.name=$('ciName').value.trim();catDraft.note=$('ciNote').value.trim();if($('ciUnit'))catDraft.unit=$('ciUnit').value;if($('ciCat'))catDraft.category=$('ciCat').value;
  catDraft.ops.forEach(o=>{o.name=$('on_'+o.id).value.trim();o.pay_type=$('ot_'+o.id).value;const v=$('ov_'+o.id).value;if(o.pay_type==='piece'){o.rate=moneyVal(v);o.norm_days=0}else{o.norm_days=qtyVal(v);o.rate=0}});
  catDraft.mats.forEach(m=>{m.kind=$('mk_'+m.id).value;m.name=$('mn_'+m.id).value.trim();m.size=$('ms_'+m.id)?$('ms_'+m.id).value.trim():'';m.shape=m.kind==='other'?'piece':m.kind==='wood'?'linear':($('msh_'+m.id)?.value||m.shape||'linear');m.length_mm=Math.round(qtyVal($('ml_'+m.id)?.value))||null;m.width_mm=Math.round(qtyVal($('mw_'+m.id)?.value))||null;m.qty=qtyVal($('mq_'+m.id).value)||1;m.unit=$('mu_'+m.id)?.value||m.unit||'шт';if($('mws_'+m.id)){m.wood_slot_id=m.kind==='wood'?($('mws_'+m.id).value||null):null;const ws=m.wood_slot_id&&woodSlot(m.wood_slot_id);if(ws){m.name=ws.name;m.size=ws.nominal;m.price_item_id=null}}else if(m.kind!=='wood')m.wood_slot_id=null;if(m.shape==='piece'&&m.kind==='metal'&&!$('mu_'+m.id))m.unit=m.unit||'шт'});
 }
@@ -60,6 +60,7 @@ function renderCatItem(){
  $('sheet').innerHTML=`<button class=close onclick=closeModal() aria-label="Закрыть">×</button><h2>${d.id?'Изделие':'Новое изделие'}</h2>
  <label class=field>Название<input id=ciName value="${esc(d.name)}" placeholder="Например: Скамья «Парк»" ${ro}></label>
  <label class=field>Примечание<input id=ciNote value="${esc(d.note)}" placeholder="металл + брус лиственницы" ${ro}></label>
+ ${typeof CAT_SECTIONS!=='undefined'?`<label class=field>Раздел<select id=ciCat ${ro}>${CAT_SECTIONS.map(([k,ic,l])=>`<option value="${k}" ${(d.category||'other')===k?'selected':''}>${ic} ${l}</option>`).join('')}</select></label>`:''}
  <label class=field>Считается в<select id=ciUnit ${ro} onchange="readCatForm();renderCatItem()"><option value="шт" ${d.unit!=='м.п.'?'selected':''}>штуках</option><option value="м.п." ${d.unit==='м.п.'?'selected':''}>погонных метрах (забор, ограждение)</option></select></label>
  <div class=info><div class=label>Работы на 1 ${esc(d.unit)}</div>${d.ops.map(o=>`<div class=edBlock><div class=edRow><input id="on_${o.id}" value="${esc(o.name)}" placeholder="Работа, например: сварка каркаса" aria-label="Работа" ${ro}>${own?`<button class=edDel aria-label="Убрать работу" onclick="readCatForm();catDraft.ops=catDraft.ops.filter(x=>x.id!=='${o.id}');renderCatItem()">×</button>`:''}</div><div class=edGrid2><label>Оплата<select id="ot_${o.id}" ${ro} onchange="readCatForm();renderCatItem()"><option value=piece ${o.pay_type==='piece'?'selected':''}>Сдельно</option><option value=day ${o.pay_type==='day'?'selected':''}>Посуточно</option></select></label><label ${!own&&o.pay_type==='piece'?'hidden':''}>${o.pay_type==='piece'?'₽ за 1 '+esc(d.unit):'чел-дней на 1 '+esc(d.unit)}<input id="ov_${o.id}" inputmode=decimal value="${o.pay_type==='piece'?(+o.rate?moneyText(o.rate):''):(+o.norm_days?num(o.norm_days):'')}" placeholder="0" ${ro}></label></div></div>`).join('')||'<div class=small>Работ нет</div>'}
  ${own?`<button class="btn secondary wide" onclick="readCatForm();catDraft.ops.push({id:uuid(),name:'',pay_type:'piece',rate:0,norm_days:0});renderCatItem()">+ Работа</button>`:''}
@@ -68,7 +69,7 @@ function renderCatItem(){
  ${own&&d.mats.length?(()=>{const c=itemMatCost(null,d.mats);return c.priced?`<div class=kvRow style="margin-top:6px"><span><b>Материалы по прайсу на 1 ${esc(d.unit)}</b>${c.priced<c.total?` <span class=small>(${c.priced} из ${c.total})</span>`:''}</span><b id=matTotal>${rub(c.sum)}</b></div>`:''})():''}
  ${own?`<div class=inlineRow><button class="btn secondary" onclick="readCatForm();catDraft.mats.push({id:uuid(),kind:'metal',shape:'linear',name:'',size:'',length_mm:null,qty:1,unit:'шт'});renderCatItem()">+ Материал</button>${priceItems.length?`<button class=btn onclick="pickMatFromPrice()">+ Из прайса</button>`:''}</div>`:''}
  <div class=small style="margin-top:8px">Погонаж (труба, уголок, брус): длина детали и сколько деталей на 1 изделие. Лист: ширина × длина детали — считается в м² + ${typeof wastePct==='function'?num(wastePct()):20}% обрезки и округляется до целых листов.</div></div>
- ${own?`<div class=actions><button class="btn secondary" onclick="${d.back?`detail('${d.back}')`:'openCatalog()'}">Назад</button><button class=btn id=ciSave onclick="saveCatItem()">Сохранить изделие</button></div>${d.id?`<button class=dangerLink onclick="archiveCatItem('${d.id}')">Убрать из справочника</button>`:''}`:''}`;
+ ${own?`<div class=actions><button class="btn secondary" onclick="${d.back?`detail('${d.back}')`:`openCatalog('${d.category||''}')`}">Назад</button><button class=btn id=ciSave onclick="saveCatItem()">Сохранить изделие</button></div>${d.id?`<button class=dangerLink onclick="archiveCatItem('${d.id}')">Убрать из справочника</button>`:''}`:''}`;
 }
 function matEdHtml(m,own,ro){
  const wslot=m.kind==='wood'&&typeof woodSlot==='function'&&m.wood_slot_id?woodSlot(m.wood_slot_id):null;
@@ -103,8 +104,8 @@ async function saveCatItem(){
  try{
   const old=catOps.filter(x=>x.item_id===d.id);
   let id=d.id;
-  if(!id){const r=await q(sb.from('catalog_items').insert({workspace_id:currentWorkspace,name:d.name,note:d.note,unit:d.unit||'шт'}).select().single());id=r.id}
-  else await q(sb.from('catalog_items').update({name:d.name,note:d.note,unit:d.unit||'шт'}).eq('id',id));
+  if(!id){const r=await q(sb.from('catalog_items').insert({workspace_id:currentWorkspace,name:d.name,note:d.note,unit:d.unit||'шт',category:d.category||null}).select().single());id=r.id}
+  else await q(sb.from('catalog_items').update({name:d.name,note:d.note,unit:d.unit||'шт',category:d.category||null}).eq('id',id));
   const keepO=new Set(d.ops.map(o=>o.id)),keepM=new Set(d.mats.map(m=>m.id));
   for(const o of catOps.filter(x=>x.item_id===id&&!keepO.has(x.id)))await q(sb.from('catalog_ops').delete().eq('id',o.id));
   for(const m of catMats.filter(x=>x.item_id===id&&!keepM.has(x.id)))await q(sb.from('catalog_materials').delete().eq('id',m.id));
@@ -120,7 +121,7 @@ async function saveCatItem(){
   for(const pid of used)await syncProject(pid,true);
   if(used.length)await loadProd();
   toast('Изделие сохранено');
-  if(d.back)openSpecAdd(d.back,id);else openCatalog();
+  if(d.back)openSpecAdd(d.back,id);else openCatalog(d.category);
  }catch(e){b.disabled=false;b.textContent='Сохранить изделие';serverError(e);alert('Не удалось сохранить: '+(e.message||e))}
 }
 async function archiveCatItem(id){if(!confirm('Убрать изделие из справочника? В объектах, где оно уже есть, ничего не изменится.'))return;try{await q(sb.from('catalog_items').update({archived:true}).eq('id',id));await loadProd();openCatalog()}catch(e){alert('Не удалось: '+(e.message||e))}}

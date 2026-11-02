@@ -541,3 +541,28 @@ span.st{min-height:0;padding:4px 8px;min-width:0}
 .mineBig{border-top:1px solid #eef1f3;margin-top:6px;padding-top:8px;font-size:16px}.mineBig b{font-size:18px}
 .tc.pc{background:#efe6f7;color:#7b3fa0;font-size:10px;line-height:1.05}.tc.pc small{display:block;font-size:9px;font-weight:600;opacity:.8}
 .tc.pc0{background:#f6f1fa;color:#c4a8dc;font-size:16px}
+/* v52 */
+.supText{box-sizing:border-box;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;resize:vertical}
+.supText.sow{font-family:inherit;font-size:13.5px;line-height:1.5}
+.rateBox{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:8px 0}
+.rateLine{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid #eef1f3;font-size:14px;margin:0}
+.rateLine:last-child{border-bottom:0}.rateLine span{flex:1;min-width:0}.rateLine small{display:block;font-size:11px;color:var(--text-secondary)}
+.rateLine input{width:120px;flex:none;text-align:right;margin:0}
+.catSec{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 10px}
+.catSec button{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px 4px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.catSec button i{font-style:normal;font-size:24px}.catSec button small{font-weight:500;color:var(--text-secondary);font-size:11px}
+.catTabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:6px 0 10px;padding-bottom:2px}
+.catTabs button{flex:none;border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 11px;font:inherit;font-size:13px;font-weight:700;color:var(--text-secondary);cursor:pointer}
+.catTabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.catGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.catCard{border:1px solid var(--border);border-radius:12px;background:#fff;padding:8px;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.catCard .im{height:58px;border-radius:9px;background:linear-gradient(135deg,#e8efea,#d5e2da);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:4px}
+.catCard b{font-size:13px}.catCard small{color:var(--text-secondary);font-size:11px}
+.catCard.sel{border:2px solid var(--green);background:#f1faf2}
+.catCard.add{border:1.5px dashed #b9c9bf;background:#f7faf8;align-items:center;justify-content:center;color:var(--primary);font-weight:800;min-height:110px}
+.opCnt{border:0;background:#e8efea;color:var(--primary);border-radius:9px;padding:4px 10px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.opCnt.pos{background:#dff1e0;color:#2e7d32}
+.wkPick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.wkPick button{flex:1 1 30%;border:1.5px solid var(--border);border-radius:11px;background:#fff;padding:10px 4px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.wkPick button.sel{border-color:var(--green);background:#eef8ef;color:#2e7d32}
+.inWheel{position:relative;height:144px;margin:4px 0}.inWheel .woodWheelCenter{top:54px}.inWheel .woodWheelTrack{height:144px;padding:54px 0}
+.qChips{display:flex;gap:6px;margin-top:6px}.qChips button{flex:1;border:0;border-radius:9px;background:#e8efea;color:var(--primary);padding:9px 0;font:inherit;font-weight:800;cursor:pointer}.qChips button.on{background:var(--primary);color:#fff}
