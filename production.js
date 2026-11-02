@@ -272,7 +272,7 @@ function supplyGroups(){
  for(const x of g.values()){
   x.barsM=0;x.bars=Object.entries(x.byLen).reduce((s,[k,n])=>{const [len,st]=k.split('|').map(Number),b=Math.ceil(n/Math.floor(st/len));x.barsM+=b*st/1000;return s+b},0);
   if(x.sheet){const sa=x.sheetW*x.sheetL/1e6;x.sheetArea=sa;x.orderArea=x.order*(1+w/100);x.sheets=sa?Math.ceil(x.orderArea/sa-1e-9):0}
-  x.cost=null;if(x.price&&x.order>0){const pr=+x.price.price;if(x.sheet)x.cost=x.sheets*pr;else if(x.linear)x.cost=(x.barsM+x.longM)*pr;else x.cost=x.order*pr}
+  x.cost=null;if(x.price&&x.order>0){const pr=+x.price.price;if(x.sheet)x.cost=x.sheets*pr;else if(x.linear)x.cost=x.kind==='metal'?(x.barsM+x.longM)*pr:x.order*pr;else x.cost=x.order*pr}
  }
  return [...g.values()].sort((a,b)=>['metal','wood','other'].indexOf(a.kind)-['metal','wood','other'].indexOf(b.kind)||a.name.localeCompare(b.name,'ru')||a.size.localeCompare(b.size,'ru'));
 }
