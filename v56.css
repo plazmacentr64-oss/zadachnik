@@ -1,0 +1,40 @@
+/* v56: даты целиком, ЕИС, деньги+экономика, план работ в цеху, переключатель ролей */
+.v56data .inlineRow{grid-template-columns:1fr;gap:8px}
+.v56data input[type=date]{width:100%;min-width:0;font-size:16px;font-weight:600;min-height:50px;box-sizing:border-box}
+.v56eisRow{display:flex;gap:8px;margin-top:4px}
+.v56eisRow input{flex:1;min-width:0;font-family:var(--mono,monospace);font-size:15px;letter-spacing:.3px}
+.v56eisGo{flex:0 0 48px;height:48px;border-radius:14px;background:var(--primary);color:#F3EDE3;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:20px;font-weight:700}
+.v56eisGo.off{background:#E9DFCF;color:#A89A86}
+.v56eisB{display:inline-block;margin-top:8px;font-family:var(--mono,monospace);font-size:12px;color:#24543E;background:#DCEBE2;border-radius:8px;padding:3px 8px}
+.v56specAdd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.v56specAdd .btn{min-height:50px;padding:8px 6px;font-size:14px}
+.v56seg{display:grid;grid-template-columns:1fr 1fr;margin:4px 0 10px}
+.v56seg button.on{background:var(--card-bg);color:var(--text);font-weight:700}
+.v56pane[hidden]{display:none!important}
+#woodBody .segBar.v56tabs{display:flex;flex-wrap:wrap;gap:4px}
+#woodBody .segBar.v56tabs>button{flex:1 1 30%;min-width:0;white-space:nowrap}
+.v56plan{padding:0!important;cursor:default}
+.v56planH{display:block;width:100%;text-align:left;background:transparent;border:0;padding:13px 14px 12px 26px;font:inherit;color:inherit;cursor:pointer}
+.v56planT{display:flex;justify-content:space-between;align-items:center;gap:8px}.v56planT b{font-size:16px}
+.v56planH small{display:block;color:var(--text-secondary);font-size:13px;margin:2px 0 8px}
+.v56planH .bar,.v56op .bar{display:block;height:7px;background:#EDE4D5;border-radius:4px;overflow:hidden}
+.v56planH .bar i,.v56op .bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
+.v56op{display:flex;align-items:center;gap:10px;padding:10px 14px 10px 26px;border-top:1px solid #EDE4D5}
+.v56opM{flex:1;min-width:0}.v56opM b{display:block;font-size:14.5px;font-weight:600}.v56opM small{display:block;color:var(--text-secondary);font-size:12.5px;margin-bottom:4px}
+.v56opR{font-family:var(--mono,monospace);font-size:13.5px;font-weight:500;white-space:nowrap}
+.v56plan .linkBtn{margin:4px 14px 12px 26px}
+#v56roleBtn{border-color:var(--primary);color:var(--primary-dark);display:inline-flex;gap:4px;align-items:center}
+#v56roleBtn.on{background:#F5E6A8;border-color:#C9A227;color:#5C4500}
+.v56viewBar{position:sticky;top:52px;z-index:45;display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:8px 8px 8px 14px;background:#F5E6A8;color:#5C4500;border-radius:16px;font-size:14px}
+.v56viewBar span{flex:1}.v56viewBar button{border:0;background:#5C4500;color:#FFF6D9;border-radius:12px;min-height:38px;padding:0 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.v56roles{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.v56role{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;border-radius:16px;border:1px solid var(--border);background:var(--card-bg);font:inherit;text-align:left;color:var(--text);cursor:pointer}
+.v56role.on{border:2px solid var(--primary);background:#F1F7F3}
+.v56ri{flex:0 0 40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.v56ri.r-owner{background:var(--primary);color:#F3EDE3}.v56ri.r-shop{background:#E3E8EB;color:#3D4C55}.v56ri.r-employee{background:#F5E6A8;color:#5C4500}
+.v56rt{flex:1}.v56rt b{display:block;font-size:15px}.v56rt small{color:var(--text-secondary);font-size:12.5px}
+.v56ok{color:var(--primary);font-size:18px;font-weight:700}
+.v56ws{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+
+.teamtop{gap:8px}.teamtop>#teamUser{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.teamtop>div:last-child{flex-wrap:nowrap;align-items:center}.teamtop .chip,.teamtop .syncdot{white-space:nowrap}
+#v56roleBtn{padding:5px 10px}
