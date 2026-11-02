@@ -41,7 +41,7 @@ const persist=()=>{};
 const memberName=id=>members.find(m=>m.user_id===id)?.display_name||members.find(m=>m.user_id===id)?.email||'';
 const dbProject=o=>({workspace_id:currentWorkspace,name:o.name,amount:+o.money||0,start_date:o.startDate||null,due_date:o.date||null,items:o.items||'',contractor:o.contractor||'',status:o.status,stage:Math.max(0,Math.min(7,+o.stage||0)),progress:Math.round(Math.max(0,Math.min(7,+o.stage||0))*100/7),closing_received:!!o.closingReceived,responsible_id:o.responsibleId||null,updated_by:currentUser?.id||null});
 const dbTask=t=>({workspace_id:currentWorkspace,project_id:t.projectId||null,title:t.title,due_date:t.date||null,responsible_id:t.responsibleId||null,done:!!t.done,completed_at:t.completedAt||null,updated_by:currentUser?.id||null});
-async function serverProjectUpsert(o,isNew=false){if(!serverReady)throw new Error('Нет связи с сервером');let payload=dbProject(o);if(isNew){payload.created_by=currentUser.id;let {data:r,error}=await sb.from('projects').insert(payload).select().single();if(error){serverError(error);throw error}o.id=r.id}else{let {error}=await sb.from('projects').update(payload).eq('id',o.id);if(error){serverError(error);throw error}}}
+async function serverProjectUpsert(o,isNew=false){if(!serverReady)throw new Error('Нет связи с сервером');let payload=dbProject(o);if(!isOwner())delete payload.amount;if(isNew){payload.created_by=currentUser.id;let {data:r,error}=await sb.from('projects').insert(payload).select().single();if(error){serverError(error);throw error}o.id=r.id}else{let {error}=await sb.from('projects').update(payload).eq('id',o.id);if(error){serverError(error);throw error}}if(isOwner()&&!(+o.money)){let {error}=await sb.from('project_finance').upsert({project_id:o.id,workspace_id:currentWorkspace,amount:0});if(error)serverError(error)}}
 async function serverTaskUpsert(t,isNew=false){if(!serverReady)throw new Error('Нет связи с сервером');let payload=dbTask(t);if(isNew){payload.created_by=currentUser.id;let {data:r,error}=await sb.from('tasks').insert(payload).select().single();if(error){serverError(error);throw error}t.id=r.id}else{let {error}=await sb.from('tasks').update(payload).eq('id',t.id);if(error){serverError(error);throw error}}}
 function serverError(e){console.error(e);$('syncDot').textContent='ОШИБКА';$('syncDot').classList.add('off')}
 async function ensureWorkspace(){
@@ -59,15 +59,17 @@ function scheduleReload(){clearTimeout(reloadTimer);reloadTimer=setTimeout(()=>l
 async function fetchAll(make){let out=[],from=0;for(;;){const {data,error}=await make().range(from,from+999);if(error)return {data:null,error};out=out.concat(data||[]);if(!data||data.length<1000)return {data:out,error:null};from+=1000}}
 async function loadServer(){
  const seq=++loadSeq;
- let [{data:ps,error:pe},{data:ts,error:te},{data:ms,error:me},{data:pays,error:paye},{data:ws,error:we},{error:wse},{data:wsRow}]=await Promise.all([
+ let [{data:ps,error:pe},{data:ts,error:te},{data:ms,error:me},{data:pays,error:paye},{data:ws,error:we},{error:wse},{data:wsRow},{data:fin}]=await Promise.all([
   fetchAll(()=>sb.from('projects').select('*').eq('workspace_id',currentWorkspace).order('created_at',{ascending:false}).order('id')),
   fetchAll(()=>sb.from('tasks').select('*').eq('workspace_id',currentWorkspace).order('created_at',{ascending:false}).order('id')),
   sb.from('members').select('*').eq('workspace_id',currentWorkspace),
   fetchAll(()=>sb.from('payments').select('*').eq('workspace_id',currentWorkspace).order('id')),
   fetchAll(()=>sb.from('wood_items').select('*').eq('workspace_id',currentWorkspace).order('created_at',{ascending:false}).order('id')),
   sb.from('wood_items').select('in_stock,ready').eq('workspace_id',currentWorkspace).limit(1),
-  sb.from('workspaces').select('id,name,company').eq('id',currentWorkspace).maybeSingle()
+  sb.from('workspaces').select('id,name,company').eq('id',currentWorkspace).maybeSingle(),
+  fetchAll(()=>sb.from('project_finance').select('project_id,amount').eq('workspace_id',currentWorkspace).order('project_id'))
  ]);
+ const finMap=new Map((fin||[]).map(f=>[f.project_id,+f.amount||0]));
  if(seq!==loadSeq)return;
  if(pe||te||me||paye)throw(pe||te||me||paye);companyInfo=wsRow?.company||{};try{localStorage.setItem('crmWs:'+currentUser.id,currentWorkspace)}catch(e){}woodAvailable=!we;woodStatusAvailable=!wse;woodLocalMode=!!we&&['42P01','PGRST205'].includes(we.code);woodLoadError=we&&!woodLocalMode?(we.message||'Ошибка загрузки'):'';
  woodFlagsAvailable=(ps||[]).some(o=>Object.hasOwn(o,'needs_wood'));
@@ -75,7 +77,7 @@ async function loadServer(){
  wood=[...remote.filter(w=>!drafts.rows.some(d=>d.id===w.id)),...drafts.rows.map(w=>({...w,local:true}))].map(withWoodStatus);
  members=ms||[];
  let byProject={};(pays||[]).forEach(p=>(byProject[p.project_id]??=[]).push({id:p.id,amount:+p.amount,date:p.paid_on,note:p.note||'',status:'Получен'}));
- data=(ps||[]).map(o=>({id:o.id,name:o.name,needsWood:Object.hasOwn(drafts.flags,o.id)?!!drafts.flags[o.id]:(typeof o.needs_wood==='boolean'?o.needs_wood:wood.some(w=>w.projectId===o.id)),money:+o.amount||0,advance:0,startDate:o.start_date||'',date:o.due_date||'',items:o.items||'',contractor:o.contractor||'',status:o.status,stage:o.status==='Выполнено'?7:(+o.stage||0),progress:o.status==='Выполнено'?100:Math.round((+o.stage||0)*100/7),closingReceived:!!o.closing_received,responsibleId:o.responsible_id||null,payments:byProject[o.id]||[]}));
+ data=(ps||[]).map(o=>({id:o.id,name:o.name,needsWood:Object.hasOwn(drafts.flags,o.id)?!!drafts.flags[o.id]:(typeof o.needs_wood==='boolean'?o.needs_wood:wood.some(w=>w.projectId===o.id)),money:finMap.has(o.id)?finMap.get(o.id):(+o.amount||0),advance:0,startDate:o.start_date||'',date:o.due_date||'',items:o.items||'',contractor:o.contractor||'',status:o.status,stage:o.status==='Выполнено'?7:(+o.stage||0),progress:o.status==='Выполнено'?100:Math.round((+o.stage||0)*100/7),closingReceived:!!o.closing_received,responsibleId:o.responsible_id||null,payments:byProject[o.id]||[]}));
  tasks=(ts||[]).map(t=>({id:t.id,title:t.title,projectId:t.project_id||null,date:t.due_date||'',createdAt:(t.created_at||'').slice(0,10),done:!!t.done,completedAt:t.completed_at||'',responsibleId:t.responsible_id||null}));
  await loadProd();if(seq!==loadSeq)return;serverReady=true;$('syncDot').textContent='СИНХР.';$('syncDot').classList.remove('off');applyRole();render();
 }
@@ -85,7 +87,7 @@ function subscribeRealtime(){
   .on('postgres_changes',{event:'*',schema:'public',table:'projects',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload())
   .on('postgres_changes',{event:'*',schema:'public',table:'tasks',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload())
   .on('postgres_changes',{event:'*',schema:'public',table:'payments',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload()).on('postgres_changes',{event:'*',schema:'public',table:'wood_items',filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload());
- ['shop_parts','spec_lines','project_ops','catalog_items','catalog_ops','catalog_materials','workers','time_days','piece_entries','payouts','pay_adjustments','week_closes'].forEach(t=>realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table:t,filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload()));
+ ['project_finance','shop_parts','spec_lines','project_ops','catalog_items','catalog_ops','catalog_materials','workers','time_days','piece_entries','payouts','pay_adjustments','week_closes'].forEach(t=>realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table:t,filter:`workspace_id=eq.${currentWorkspace}`},()=>scheduleReload()));
  realtimeChannel.subscribe();
 }
 let teamStartedFor=null;
