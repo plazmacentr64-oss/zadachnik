@@ -1,0 +1,9 @@
+/* v59: карточка изделия без расчёта зарплаты */
+.v59works .edBlock{margin-bottom:6px}
+.v59works .edRow{display:flex;align-items:center;gap:8px}
+.v59works .edRow input{flex:1;min-width:0}
+.v59tag{font:500 12px var(--mono);color:var(--text-secondary);background:#F2EBDF;border-radius:8px;padding:4px 8px;white-space:nowrap;flex:none}
+.v59tag.no{background:#FBE7E2;color:#8E2B19;font-family:inherit;font-weight:700}
+.v59quick{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.v59quick .chip{min-height:36px}
+.v59link{margin-top:8px}

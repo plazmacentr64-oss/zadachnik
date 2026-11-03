@@ -1,0 +1,98 @@
+/* v57: Зарплата одним экраном, единый барабан, справочники */
+
+/* единый барабан — один вид везде */
+.woodWheelLayer{background:rgba(42,33,24,.42)}
+.woodWheelPanel{background:var(--card-bg);border:1px solid var(--border);border-radius:24px 24px 20px 20px;box-shadow:0 12px 40px rgba(42,33,24,.22);padding:10px 14px 12px}
+.woodWheelHead{border-bottom:1px solid #EFE6D8}
+.woodWheelHead b{color:var(--text);font-size:15px;font-weight:700;text-align:center;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.woodWheelHead button{color:var(--text-secondary);font-size:14px;min-height:44px;padding:0 6px}
+.woodWheelHead .wheelDone{color:var(--primary)}
+.woodWheelLabel{color:var(--text-secondary);font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.woodWheelColumns{gap:8px}
+.woodWheelCenter{background:#E3EEE7;border:0;border-radius:12px}
+.woodWheelNumber{color:#A99A84;font-size:19px}
+.woodWheelNumber.wheelText{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.woodWheelNumber[aria-selected=true]{color:var(--text);font-weight:700}
+.wheelManual{color:var(--primary);font-weight:600;font-size:13px;min-height:40px;font-family:inherit}
+
+/* Зарплата */
+.s57wk{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.s57wk b{font-size:15px}
+.s57round{width:44px;height:44px;border:1px solid #D9CCB6;border-radius:22px;background:transparent;font-size:18px;color:var(--text);cursor:pointer}
+.s57days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.s57d{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 6px;border-radius:14px;background:var(--card-bg);border:1px solid var(--border);font-weight:600;font-size:11px;font-family:inherit;color:var(--text-secondary);cursor:pointer;min-height:54px}
+.s57d b{font:500 15px var(--head);color:var(--text)}
+.s57d i{width:7px;height:7px;border-radius:4px;border:1.5px solid #CDBFA9;box-sizing:border-box}
+.s57d i.f{background:var(--primary);border-color:var(--primary)}
+.s57d i.h{background:linear-gradient(90deg,var(--primary) 50%,transparent 50%);border-color:var(--primary)}
+.s57d.we{opacity:.75}
+.s57d.today{border-color:var(--primary)}
+.s57d.on{background:var(--ink);border-color:var(--ink);color:#D9CCB6;opacity:1}
+.s57d.on b{color:#F3EDE3}
+.s57sec{display:flex;align-items:center;justify-content:space-between;min-height:36px;margin:2px 2px 6px;gap:8px}
+.s57sec b{font:500 15px var(--head)}
+.s57sec span{font-size:13px;color:var(--text-secondary)}
+.s57pill{height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--primary);color:#fff;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap}
+.s57list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.s57row{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;min-height:52px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;text-align:left;font:inherit;color:var(--text);cursor:pointer}
+.s57row:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+.s57row.dim{opacity:.65}
+.s57row.warn{border-color:#E9B8AC}
+.s57av{width:34px;height:34px;border-radius:17px;background:#E3EEE7;color:var(--primary);display:flex;align-items:center;justify-content:center;font:500 14px var(--head);flex:none}
+.s57av.pc{background:#ECE6F6;color:#4A3D99}
+.s57av.off{background:#EFE6D8;color:#A99A84}
+.s57ic{width:36px;height:36px;border-radius:10px;background:#E3EEE7;color:var(--primary);display:flex;align-items:center;justify-content:center;flex:none}
+.s57tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.s57tx b{font-size:15px;font-weight:600}
+.s57tx span{font-size:12.5px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s57tx span.bad{color:#8E2B19;font-weight:600}
+.s57v{font:500 14px var(--mono);white-space:nowrap}
+.s57v.mute{color:#A99A84}
+.s57ask{height:36px;padding:0 14px;border:1.5px dashed #B9A98F;border-radius:18px;background:transparent;font-weight:600;font-size:13px;font-family:inherit;color:var(--text);cursor:pointer;white-space:nowrap}
+.s57pay{height:36px;padding:0 12px;border:0;border-radius:10px;background:var(--primary);color:#fff;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer}
+.s57done{font-size:11px;font-weight:700;color:var(--primary);background:#E3EEE7;border-radius:8px;padding:4px 7px;white-space:nowrap}
+.s57strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:10px 2px;margin-bottom:8px}
+.s57strip div{display:flex;flex-direction:column;align-items:center;gap:2px;border-left:1px solid var(--border)}
+.s57strip div:first-child{border-left:0}
+.s57strip b{font:500 15px var(--head)}
+.s57strip b.pos{color:var(--primary)}.s57strip b.neg{color:var(--red)}
+.s57strip span{font-size:11px;color:var(--text-secondary)}
+.s57links{display:flex;justify-content:space-between;gap:8px;margin:2px 2px 10px}
+.s57dark{background:var(--ink)!important}
+.s57chev{color:#B9A98F;font-size:20px;line-height:1}
+.s57cnt{font:500 13px var(--mono);color:var(--text-secondary)}
+.s57badge{font-size:11px;font-weight:700;border-radius:8px;padding:3px 8px;white-space:nowrap}
+.s57badge.r{background:#FBE7E2;color:#8E2B19}.s57badge.a{background:#F4E3C4;color:#7A4B0E}.s57badge.g{background:#E3EEE7;color:var(--primary)}
+
+/* окно «что сделал» и правка цены */
+.s57og{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin:12px 2px 6px}
+.s57it{border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--card-bg);margin-bottom:6px}
+.s57it.no{border-color:#E9B8AC}
+.s57it .r1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.s57it .r1 b{font-size:14px}
+.s57it .r2{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--text-secondary)}
+.s57price{display:inline-flex;align-items:center;min-height:36px;padding:0 10px;border:1px solid #D9CCB6;border-radius:10px;background:#F2EBDF;font:500 13px var(--mono);color:var(--text);white-space:nowrap;cursor:pointer;flex:none}
+.s57price.no{background:#FBE7E2;border-color:#E9B8AC;color:#8E2B19;font-family:inherit;font-weight:700}
+.s57price.day{background:transparent;border-style:dashed;color:var(--text-secondary);font-family:inherit;font-weight:600;cursor:default}
+.s57tot{display:flex;justify-content:space-between;align-items:baseline;padding:12px 2px 4px;margin-top:6px;border-top:1px solid #EFE6D8}
+.s57tot b{font:500 18px var(--head)}
+.s57kv{display:flex;justify-content:space-between;padding:4px 2px;font-size:14px}
+.s57kv b.pos{color:var(--primary);font-size:16px}
+.s57money{display:block;width:100%;box-sizing:border-box;height:64px;border:2px solid var(--primary);border-radius:16px;text-align:center;font:500 28px var(--mono);background:#fff;color:var(--text);margin:8px 0}
+.s57qc{display:flex;gap:6px;margin-bottom:4px}
+.s57qc button{flex:1;height:40px;border:1px solid #D9CCB6;border-radius:20px;background:transparent;font:500 14px var(--mono);color:var(--text);cursor:pointer}
+.s57opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:1px solid var(--border);border-radius:14px;padding:10px 12px;font:inherit;font-size:13px;color:#5E4F3D;background:var(--card-bg);margin-bottom:6px;cursor:pointer}
+.s57opt b{display:block;font-size:14px;color:var(--text)}
+.s57opt.on{border:2px solid var(--primary);background:#F1F7F3}
+.s57opt[disabled]{opacity:.55;cursor:default}
+.s57opt .rad{width:18px;height:18px;border-radius:9px;border:2px solid #CDBFA9;flex:none;margin-top:2px;box-sizing:border-box}
+.s57opt.on .rad{border:5px solid var(--primary)}
+.s57res{display:flex;justify-content:space-between;background:#F2EBDF;border-radius:14px;padding:11px 14px;font-size:14px;margin:6px 0 10px}
+.s57res b{font:500 14px var(--mono)}
+
+/* справочники */
+.s57hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-right:44px}
+.s57plus{width:44px;height:44px;border:0;border-radius:14px;background:var(--primary);color:#fff;font-size:24px;line-height:1;cursor:pointer;flex:none}
+.s57seg2{display:grid!important;grid-template-columns:1fr 1fr}
+.s57g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.s57g3 .field{font-size:12px}

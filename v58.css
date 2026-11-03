@@ -1,0 +1,48 @@
+/* v58: единый вид вкладок */
+.v58moved{display:none!important}
+
+/* шапка приложения: кружок вместо почты, «ОШИБКА» и «Ещё» */
+.v58top #teamUser,.v58top #syncDot,.v58top #teamBtn{display:none!important}
+.v58top{justify-content:flex-end}
+.v58av{position:relative;width:40px;height:40px;border-radius:20px;border:0;background:var(--primary);color:#F3EDE3;font:500 15px var(--head);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.v58av i{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:6px;border:2px solid var(--bg);background:#CDBFA9}
+.v58av i.ok{background:#8FD1AE}.v58av i.bad{background:var(--red)}
+
+/* шапка вкладки: заголовок + счётчик слева, «+» справа */
+.view .eyebrow{display:none}
+.v58head{display:flex!important;align-items:center;justify-content:space-between;gap:12px}
+.v58ttl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.v58ttl h1{margin:0}
+.v58cnt{margin:0!important;font-size:14px;color:var(--text-secondary)}
+.v58plus{width:44px;height:44px;border:0;border-radius:14px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.v58plus[hidden]{display:none}
+
+/* один переключатель — сегменты в одну строку */
+.segBar,.v58seg{display:flex!important;flex-wrap:nowrap!important;overflow:hidden!important;background:#E9DFCF;border-radius:16px;padding:4px;gap:2px}
+.segBar button,.v58seg button,.v58seg .chip{flex:1 1 0;min-width:0;min-height:40px;height:auto;margin:0;padding:6px 4px;border:0!important;border-radius:12px;background:transparent;color:var(--text);font-family:inherit;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:none;display:flex;align-items:center;justify-content:center;text-align:center}
+.segBar button.on,.v58seg button.on,.v58seg .chip.on{background:var(--ink)!important;color:#F3EDE3!important}
+.segBar button svg,.v58seg button svg{display:none}
+.v58seg i,.segBar i{font-style:normal;opacity:.6;margin-left:4px}
+#objectsView .filters.v58seg{margin-top:10px}
+.scopeSwitch.v58seg{margin:0 0 10px}
+
+/* полоса итогов на «Сегодня» — как на «Объектах» */
+#todayBody .kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:10px 2px}
+#todayBody .kpi button{background:transparent!important;border:0;border-left:1px solid var(--border);border-radius:0;padding:2px 2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:none}
+#todayBody .kpi button:first-child{border-left:0}
+#todayBody .kpi b{font:500 18px var(--head);color:var(--text)}
+#todayBody .kpi .hot b{color:var(--red)}
+#todayBody .kpi span{font-size:11px;line-height:1.2;color:var(--text-secondary);text-align:center}
+.v58link{margin:12px 0;background:#E3EEE7!important;border-color:#CFE2D6!important}
+
+/* полоса итогов в «Деньгах» */
+.v58s4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.v58s4 b{font-size:14px!important}
+.s57strip b.neg{color:var(--red)}
+
+/* закрытый объект: штамп, договор, дата сдачи */
+.v58closed{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--text-secondary);margin-top:6px}
+.v58closed b{font-family:var(--mono);font-weight:500;font-size:15px;color:var(--text)}
+
+/* подсказки под списками — убраны, объясняет только пустое состояние */
+#woodBody > .small,#supplyBody > .small,#taskList > .small{display:none}
